@@ -7,6 +7,22 @@ const colorPaper = Color(0xFFF5F1E1);
 const colorAccent = Color(0xFFC7A84A);
 const colorText = Color(0xFF5A4632);
 
+// UI spacing & radii (align closer to reference image)
+const double kPaperRadius = 24;
+const double kHeaderPillHeight = 44;
+const double kQuestCardRadius = 24;
+const double kQuestCardStroke = 2;
+const double kQuestCardDash = 6;
+const double kQuestCardGap = 4;
+const double kQuestIconSize = 64;
+const double kBadgeSize = 44;
+
+// Colors used within cards (from reference tones)
+const Color kCardFill = Color(0xFFF9F0D6);
+const Color kCardStroke = Color(0xFFDEBE96);
+const Color kChipFill = Color(0xFFEDE1BD);
+const Color kChipFillAlt = Color(0xFFE6DCB5);
+
 // Placeholder asset URLs
 const String kPlaceholderIcon = '';
 const String kPlaceholderReward = '';

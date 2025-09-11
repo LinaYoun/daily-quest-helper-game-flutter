@@ -7,16 +7,22 @@ import 'quest_icon_painter.dart';
 
 // Custom quest icons with colorful style
 class QuestGlyph extends StatelessWidget {
-  const QuestGlyph({super.key, required this.title, this.iconUrl});
+  const QuestGlyph({
+    super.key,
+    required this.title,
+    this.iconUrl,
+    this.size = 64,
+  });
   final String title;
   final String? iconUrl;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     final bool hasIcon = iconUrl != null && iconUrl!.isNotEmpty;
     return Container(
-      width: 64,
-      height: 64,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -36,8 +42,8 @@ class QuestGlyph extends StatelessWidget {
             fit: BoxFit.contain,
             alignment: Alignment.center,
             child: SizedBox(
-              width: 64,
-              height: 64,
+              width: size,
+              height: size,
               child: hasIcon
                   ? _buildIconImage(iconUrl!)
                   : CustomPaint(painter: QuestIconPainter(title)),
@@ -141,6 +147,77 @@ class LoadingScreen extends StatelessWidget {
   }
 }
 
+class PatternBackground extends StatelessWidget {
+  const PatternBackground({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(painter: _PatternPainter());
+  }
+}
+
+class _PatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint outline = Paint()
+      ..color = Colors.black.withOpacity(0.28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round;
+
+    void drawBook(Offset center, double s, double angleRadians) {
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(angleRadians);
+
+      final RRect cover = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(0, 0), width: s * 1.2, height: s * 0.8),
+        Radius.circular(s * 0.12),
+      );
+      canvas.drawRRect(cover, outline);
+
+      // Label on the cover
+      final RRect label = RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(0, -s * 0.06),
+          width: s * 0.55,
+          height: s * 0.25,
+        ),
+        Radius.circular(s * 0.06),
+      );
+      canvas.drawRRect(label, outline);
+
+      // Page lines
+      final double pw = s * 1.0;
+      final double py = s * 0.42;
+      final Path pages = Path()
+        ..moveTo(-pw / 2, py)
+        ..lineTo(pw / 2, py)
+        ..moveTo(-pw / 2 + s * 0.1, py - s * 0.1)
+        ..lineTo(pw / 2 - s * 0.08, py - s * 0.1)
+        ..moveTo(-pw / 2 + s * 0.18, py - s * 0.2)
+        ..lineTo(pw / 2 - s * 0.16, py - s * 0.2);
+      canvas.drawPath(pages, outline);
+
+      canvas.restore();
+    }
+
+    const double step = 180;
+    bool alt = false;
+    for (double y = 40; y < size.height; y += step) {
+      for (double x = 40; x < size.width; x += step) {
+        drawBook(Offset(x, y), 56, alt ? -0.18 : 0.18);
+        alt = !alt;
+      }
+      alt = !alt;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class CharacterView extends StatelessWidget {
   const CharacterView({super.key, required this.imageUrl, required this.state});
   final String imageUrl;
@@ -177,31 +254,40 @@ class HeaderBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: -24,
+      top: -28,
       left: 0,
       right: 0,
       child: Column(
         children: <Widget>[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            decoration: BoxDecoration(
-              color: colorAccent,
-              borderRadius: BorderRadius.circular(999),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+          Align(
+            alignment: Alignment.center,
+            widthFactor: 1,
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              child: Container(
+                height: kHeaderPillHeight + 6,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                decoration: BoxDecoration(
+                  color: colorAccent,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: const Text(
-              '일일 임무',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.1,
+                alignment: Alignment.center,
+                child: const Text(
+                  '일일 임무',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 34,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                  ),
+                ),
               ),
             ),
           ),
@@ -214,9 +300,9 @@ class HeaderBar extends StatelessWidget {
               Text(
                 '6 시간 24 분',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   color: colorText,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -317,9 +403,9 @@ class QuestGridView extends StatelessWidget {
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 3.0,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 2.4,
       ),
       itemCount: quests.length,
       itemBuilder: (context, index) =>
@@ -344,7 +430,11 @@ class QuestItem extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.max,
               children: <Widget>[
-                QuestGlyph(title: quest.title, iconUrl: quest.iconUrl),
+                QuestGlyph(
+                  title: quest.title,
+                  iconUrl: quest.iconUrl,
+                  size: 56,
+                ),
                 const SizedBox(width: 12),
                 Flexible(
                   child: Text(
@@ -425,11 +515,11 @@ class _DashedRRectPainter extends CustomPainter {
     final Paint stroke = Paint()
       ..color = strokeColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = kQuestCardStroke;
 
-    const double dash = 6;
-    const double gap = 4;
-    final Path path = Path()..addRRect(outer.deflate(8));
+    const double dash = kQuestCardDash;
+    const double gap = kQuestCardGap;
+    final Path path = Path()..addRRect(outer.deflate(10));
     for (final ui.PathMetric metric in path.computeMetrics()) {
       double distance = 0;
       while (distance < metric.length) {
@@ -459,37 +549,41 @@ class QuestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomPaint(
       painter: const _DashedRRectPainter(
-        strokeColor: Color(0xFFDEBE96),
-        fillColor: Color(0xFFF9F0D6),
-        radius: 24,
+        strokeColor: kCardStroke,
+        fillColor: kCardFill,
+        radius: kQuestCardRadius,
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
+        padding: const EdgeInsets.all(34),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Expanded(
-              child: Row(
-                children: <Widget>[
-                  QuestGlyph(title: quest.title, iconUrl: quest.iconUrl),
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: Text(
-                      quest.title,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: colorText,
-                      ),
+            Row(
+              children: <Widget>[
+                QuestGlyph(
+                  title: quest.title,
+                  iconUrl: quest.iconUrl,
+                  size: 52,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    quest.title,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 23,
+                      fontWeight: FontWeight.w800,
+                      color: colorText,
                     ),
                   ),
-                ],
-              ),
+                ),
+                // Removed duplicate top progress chip
+              ],
             ),
-            const SizedBox(width: 8),
+            const SizedBox(height: 8),
             Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -497,26 +591,36 @@ class QuestCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEDE1BD),
+                    color: kChipFillAlt,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '${quest.progress}/${quest.target}',
                     style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
                       color: colorText,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 _CompletionIcon(completed: quest.isCompleted),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 InkWell(
                   onTap: quest.isCompleted ? null : () => onComplete(quest.id),
-                  child: _RewardTile(
-                    imageUrl: quest.rewardUrl,
-                    isCompleted: quest.isCompleted,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorAccent.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: _RewardTile(
+                      imageUrl: quest.rewardUrl,
+                      isCompleted: quest.isCompleted,
+                    ),
                   ),
                 ),
               ],
@@ -534,17 +638,17 @@ class _CompletionIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 48,
-      height: 48,
+      width: kBadgeSize,
+      height: kBadgeSize,
       decoration: const BoxDecoration(
-        color: Color(0xFFE6DCB5),
+        color: kChipFillAlt,
         shape: BoxShape.circle,
       ),
       child: Center(
         child: completed
             ? const SizedBox(
-                width: 28,
-                height: 28,
+                width: 30,
+                height: 30,
                 child: CustomPaint(
                   painter: _CheckPainter(color: Colors.green, strokeWidth: 3),
                 ),
@@ -553,8 +657,8 @@ class _CompletionIcon extends StatelessWidget {
                 '?',
                 style: TextStyle(
                   color: colorText,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
       ),
@@ -606,14 +710,14 @@ class _RewardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget content = Container(
-      width: 64,
-      height: 64,
+      width: 40,
+      height: 40,
       alignment: Alignment.center,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: imageUrl != null && imageUrl!.isNotEmpty
             ? _buildRewardImage(imageUrl!)
-            : const Icon(Icons.card_giftcard, color: colorAccent, size: 40),
+            : const Icon(Icons.card_giftcard, color: Colors.white, size: 28),
       ),
     );
 

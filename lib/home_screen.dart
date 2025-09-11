@@ -149,6 +149,8 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Stack(
           children: <Widget>[
+            // Patterned background similar to reference image (slightly darker so pattern is visible)
+            const Positioned.fill(child: PatternBackground()),
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1100),
@@ -167,35 +169,41 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: colorPaper.withOpacity(0.92),
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: <BoxShadow>[
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 12,
-                                offset: const Offset(0, 6),
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: FractionallySizedBox(
+                            widthFactor: 0.88,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: colorPaper.withOpacity(0.92),
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: <BoxShadow>[
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: <Widget>[
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  56,
-                                  16,
-                                  16,
-                                ),
-                                child: QuestGridView(
-                                  quests: _quests,
-                                  onComplete: _handleCompleteQuest,
-                                ),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: <Widget>[
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      56,
+                                      16,
+                                      16,
+                                    ),
+                                    child: QuestGridView(
+                                      quests: _quests,
+                                      onComplete: _handleCompleteQuest,
+                                    ),
+                                  ),
+                                  const HeaderBar(),
+                                ],
                               ),
-                              const HeaderBar(),
-                            ],
+                            ),
                           ),
                         ),
                       ),
