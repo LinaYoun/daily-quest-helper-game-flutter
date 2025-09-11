@@ -1,0 +1,65 @@
+import 'package:flutter/material.dart';
+import 'models.dart';
+
+// Color palette
+const colorBackground = Color(0xFF6B5644);
+const colorPaper = Color(0xFFF5F1E1);
+const colorAccent = Color(0xFFC7A84A);
+const colorText = Color(0xFF5A4632);
+
+// Placeholder asset URLs
+const String kPlaceholderIcon = '';
+const String kPlaceholderReward = '';
+
+// Optional: reference image URL to guide icon style (can be overridden by REFERENCE_IMAGE_URL)
+const String kReferenceImageUrl = '';
+
+// Optional: reference image asset path bundled with the app
+// Provide via --dart-define=REFERENCE_ASSET_PATH=assets/reference_icon_style.png or set here.
+const String kReferenceAssetPath = 'assets/reference_icon_style.png';
+
+// Initial quests, icon and reward urls will be attached at runtime
+const List<Quest> initialQuests = <Quest>[
+  Quest(
+    id: 1,
+    title: '설거지 (Dishes)',
+    progress: 0,
+    target: 35,
+    status: QuestStatus.incomplete,
+  ),
+  Quest(
+    id: 2,
+    title: '영어 공부 (English Study)',
+    progress: 0,
+    target: 2,
+    status: QuestStatus.incomplete,
+  ),
+  Quest(
+    id: 3,
+    title: '주문 완료 (Order Complete)',
+    progress: 1,
+    target: 1,
+    status: QuestStatus.completed,
+  ),
+  Quest(
+    id: 4,
+    title: '문 수리 (Door Repair)',
+    progress: 0,
+    target: 4,
+    status: QuestStatus.incomplete,
+  ),
+  Quest(
+    id: 5,
+    title: '물 주기 (Water Plants)',
+    progress: 0,
+    target: 5,
+    status: QuestStatus.incomplete,
+  ),
+  Quest(
+    id: 6,
+    title: '독서(Read a Book)',
+    progress: 0,
+    target: 1,
+    status: QuestStatus.incomplete,
+  ),
+];
