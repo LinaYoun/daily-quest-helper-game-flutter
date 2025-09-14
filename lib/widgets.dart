@@ -7,6 +7,7 @@ import 'constants.dart';
 import 'models.dart';
 import 'quest_icon_painter.dart';
 import 'owned_item_painters.dart';
+import 'services/database_service.dart';
 
 // Custom quest icons with colorful style
 class QuestGlyph extends StatelessWidget {
@@ -350,35 +351,335 @@ class CornerDecoration extends StatelessWidget {
   }
 }
 
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final DatabaseService _db = DatabaseService();
+  Map<int, int> _counts = const {1: 0, 2: 0, 3: 0, 4: 0};
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final c = await _db.getOwnedItemCounts();
+    if (!mounted) return;
+    setState(() => _counts = c);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: colorBackground,
+      body: SafeArea(
+        child: Stack(
+          children: <Widget>[
+            const Positioned.fill(child: PatternBackground()),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1100),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colorPaper.withOpacity(0.92),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                _ProfileHeader(),
+                                const SizedBox(height: 20),
+                                Row(
+                                  children: const <Widget>[
+                                    Icon(Icons.emoji_events, color: colorText),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      '획득한 배지',
+                                      style: TextStyle(
+                                        color: colorText,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                _BadgesPanel(counts: _counts),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const HeaderBar(title: '프로필', showTimer: false),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 16,
+              left: 16,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop('refresh'),
+                child: Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF6EED6),
+                    shape: BoxShape.circle,
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: const Color(0xFFBE9E6A),
+                      width: 6,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const <Widget>[
+                      Icon(Icons.home, color: colorText, size: 34),
+                      SizedBox(height: 2),
+                      Text(
+                        'HOME',
+                        style: TextStyle(
+                          color: colorText,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const Positioned(
+              top: 12,
+              right: 12,
+              child: TopRightCharacterBadge(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0D8A5),
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFFBE9E6A), width: 8),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: const Text('🐻', style: TextStyle(fontSize: 60)),
+        ),
+        const SizedBox(width: 20),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const <Widget>[
+            Text(
+              '곰돌이',
+              style: TextStyle(
+                color: colorText,
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            SizedBox(height: 8),
+            _LevelChip(level: 15),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _LevelChip extends StatelessWidget {
+  const _LevelChip({required this.level});
+  final int level;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: kChipFillAlt,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        'LV. $level',
+        style: const TextStyle(color: colorText, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+class _BadgesPanel extends StatelessWidget {
+  const _BadgesPanel({required this.counts});
+  final Map<int, int> counts;
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: CustomPaint(
+        painter: const DashedRRectPainter(
+          strokeColor: kCardStroke,
+          fillColor: kCardFill,
+          radius: 24,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 3,
+            childAspectRatio: 1.0,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            children: const <Widget>[
+              _BadgePlaceholder(),
+              _BadgePlaceholder(),
+              _BadgePlaceholder(),
+              _BadgePlaceholder(),
+              _BadgePlaceholder(),
+              _BadgePlaceholder(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BadgePlaceholder extends StatelessWidget {
+  const _BadgePlaceholder();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: Alignment.center,
+      child: Container(
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF6EED6),
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFFBE9E6A), width: 6),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Container(
+            width: 92,
+            height: 92,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: <Color>[Colors.grey.shade300, Colors.grey.shade400],
+              ),
+            ),
+            child: const Center(
+              child: Text(
+                '?',
+                style: TextStyle(
+                  color: Color(0xFF7A6A58),
+                  fontSize: 40,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class TopRightCharacterBadge extends StatelessWidget {
   const TopRightCharacterBadge({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 96,
-      height: 96,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0D8A5),
-        shape: BoxShape.circle,
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-        border: Border.all(color: const Color(0xFFBE9E6A), width: 6),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: const <Widget>[
-          Text('🐻', style: TextStyle(fontSize: 44)),
-          Positioned(
-            top: 8,
-            child: Icon(Icons.emoji_events, color: Color(0xFFCCAA66), size: 20),
-          ),
-        ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+      },
+      child: Container(
+        width: 96,
+        height: 96,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0D8A5),
+          shape: BoxShape.circle,
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(color: const Color(0xFFBE9E6A), width: 6),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: const <Widget>[
+            Text('🐻', style: TextStyle(fontSize: 44)),
+            Positioned(
+              top: 8,
+              child: Icon(
+                Icons.emoji_events,
+                color: Color(0xFFCCAA66),
+                size: 20,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
