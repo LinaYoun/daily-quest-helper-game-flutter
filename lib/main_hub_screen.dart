@@ -6,6 +6,7 @@ import 'widgets.dart';
 import 'models.dart';
 import 'services/database_service.dart';
 import 'weekly_screens.dart';
+import 'streak_screens.dart';
 
 class MainHubScreen extends StatefulWidget {
   const MainHubScreen({super.key});
@@ -31,6 +32,8 @@ class _MainHubScreenState extends State<MainHubScreen> {
     try {
       final List<Quest> quests = await _db.getAllQuests();
       final List<Quest> weekly = await _db.getAllWeeklyQuests();
+      final (int streakDays, String? lastResetYmd, String? lastCompletionYmd) =
+          await _db.getStreakState();
       final int completed = quests.where((q) => q.isCompleted).length;
       final int wCompleted = weekly.where((q) => q.isCompleted).length;
       setState(() {
@@ -38,8 +41,7 @@ class _MainHubScreenState extends State<MainHubScreen> {
         _completed = completed;
         _weeklyTotal = weekly.length;
         _weeklyCompleted = wCompleted;
-        // Placeholder: streak not tracked yet
-        _streakDays = 0;
+        _streakDays = streakDays;
       });
     } catch (_) {
       setState(() {
@@ -72,10 +74,13 @@ class _MainHubScreenState extends State<MainHubScreen> {
   }
 
   void _openStreak(BuildContext context) {
-    // Placeholder: Could push a future StreakScreen
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('연속 임무는 곧 제공됩니다.')));
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const StreakHomeScreen()))
+        .then((result) {
+          if (result == 'refresh') {
+            _loadCounts();
+          }
+        });
   }
 
   @override

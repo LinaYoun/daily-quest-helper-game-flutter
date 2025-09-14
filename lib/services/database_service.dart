@@ -112,6 +112,92 @@ class DatabaseService {
     return 1;
   }
 
+  // Streak CRUD
+  Future<int> insertStreakQuest(domain.Quest quest) async {
+    await _db.upsertStreakQuest(
+      StreakQuestsCompanion(
+        id: drift.Value(quest.id),
+        title: drift.Value(quest.title),
+        progress: drift.Value(quest.progress),
+        target: drift.Value(quest.target),
+        status: drift.Value(
+          quest.status == domain.QuestStatus.completed
+              ? 'completed'
+              : 'incomplete',
+        ),
+        iconUrl: drift.Value(quest.iconUrl),
+        rewardUrl: drift.Value(quest.rewardUrl),
+      ),
+    );
+    return quest.id;
+  }
+
+  Future<List<domain.Quest>> getAllStreakQuests() async {
+    final rows = await _db.getAllStreakQuests();
+    return rows
+        .map(
+          (r) => domain.Quest(
+            id: r.id,
+            title: r.title,
+            progress: r.progress,
+            target: r.target,
+            status: r.status == 'completed'
+                ? domain.QuestStatus.completed
+                : domain.QuestStatus.incomplete,
+            iconUrl: r.iconUrl,
+            rewardUrl: r.rewardUrl,
+          ),
+        )
+        .toList();
+  }
+
+  Future<int> updateStreakQuest(domain.Quest quest) async {
+    await _db.upsertStreakQuest(
+      StreakQuestsCompanion(
+        id: drift.Value(quest.id),
+        title: drift.Value(quest.title),
+        progress: drift.Value(quest.progress),
+        target: drift.Value(quest.target),
+        status: drift.Value(
+          quest.status == domain.QuestStatus.completed
+              ? 'completed'
+              : 'incomplete',
+        ),
+        iconUrl: drift.Value(quest.iconUrl),
+        rewardUrl: drift.Value(quest.rewardUrl),
+      ),
+    );
+    return 1;
+  }
+
+  Future<int> deleteStreakQuest(int id) async {
+    await _db.deleteStreakQuestById(id);
+    return 1;
+  }
+
+  // Streak state helpers
+  Future<(int streakDays, String? lastResetYmd, String? lastCompletionYmd)>
+  getStreakState() async {
+    final s = await _db.getStreakState();
+    if (s == null) return (0, null, null);
+    return (s.streakDays, s.lastResetYmd, s.lastCompletionYmd);
+  }
+
+  Future<void> setStreakState({
+    required int streakDays,
+    String? lastResetYmd,
+    String? lastCompletionYmd,
+  }) async {
+    await _db.upsertStreakState(
+      StreakStatesCompanion(
+        id: drift.Value(1),
+        streakDays: drift.Value(streakDays),
+        lastResetYmd: drift.Value(lastResetYmd),
+        lastCompletionYmd: drift.Value(lastCompletionYmd),
+      ),
+    );
+  }
+
   Future<domain.Quest?> getQuest(int id) async {
     final list = await _db.getAllQuests();
     final r = list.where((e) => e.id == id).cast<domain.Quest?>();

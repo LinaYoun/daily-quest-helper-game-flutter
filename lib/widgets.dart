@@ -45,8 +45,16 @@ class QuestGlyph extends StatelessWidget {
               width: size,
               height: size,
               child: hasIcon
-                  ? _buildIconImage(iconUrl!)
-                  : CustomPaint(painter: QuestIconPainter(title)),
+                  ? (iconUrl == 'builtin:weekly-calendar'
+                        ? CustomPaint(painter: CalendarCheckIconPainter())
+                        : iconUrl == 'builtin:streak-chain'
+                        ? CustomPaint(painter: StreakChainIconPainter())
+                        : _buildIconImage(iconUrl!))
+                  : CustomPaint(
+                      painter: title.contains('주간')
+                          ? CalendarCheckIconPainter()
+                          : QuestIconPainter(title),
+                    ),
             ),
           ),
         ),

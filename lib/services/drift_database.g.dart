@@ -880,16 +880,782 @@ class WeeklyQuestsCompanion extends UpdateCompanion<WeeklyQuest> {
   }
 }
 
+class $StreakQuestsTable extends StreakQuests
+    with TableInfo<$StreakQuestsTable, StreakQuest> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StreakQuestsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _progressMeta = const VerificationMeta(
+    'progress',
+  );
+  @override
+  late final GeneratedColumn<int> progress = GeneratedColumn<int>(
+    'progress',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetMeta = const VerificationMeta('target');
+  @override
+  late final GeneratedColumn<int> target = GeneratedColumn<int>(
+    'target',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _iconUrlMeta = const VerificationMeta(
+    'iconUrl',
+  );
+  @override
+  late final GeneratedColumn<String> iconUrl = GeneratedColumn<String>(
+    'icon_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rewardUrlMeta = const VerificationMeta(
+    'rewardUrl',
+  );
+  @override
+  late final GeneratedColumn<String> rewardUrl = GeneratedColumn<String>(
+    'reward_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    progress,
+    target,
+    status,
+    iconUrl,
+    rewardUrl,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'streak_quests';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StreakQuest> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('progress')) {
+      context.handle(
+        _progressMeta,
+        progress.isAcceptableOrUnknown(data['progress']!, _progressMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_progressMeta);
+    }
+    if (data.containsKey('target')) {
+      context.handle(
+        _targetMeta,
+        target.isAcceptableOrUnknown(data['target']!, _targetMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_targetMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('icon_url')) {
+      context.handle(
+        _iconUrlMeta,
+        iconUrl.isAcceptableOrUnknown(data['icon_url']!, _iconUrlMeta),
+      );
+    }
+    if (data.containsKey('reward_url')) {
+      context.handle(
+        _rewardUrlMeta,
+        rewardUrl.isAcceptableOrUnknown(data['reward_url']!, _rewardUrlMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StreakQuest map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StreakQuest(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      progress: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}progress'],
+      )!,
+      target: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      iconUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon_url'],
+      ),
+      rewardUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reward_url'],
+      ),
+    );
+  }
+
+  @override
+  $StreakQuestsTable createAlias(String alias) {
+    return $StreakQuestsTable(attachedDatabase, alias);
+  }
+}
+
+class StreakQuest extends DataClass implements Insertable<StreakQuest> {
+  final int id;
+  final String title;
+  final int progress;
+  final int target;
+  final String status;
+  final String? iconUrl;
+  final String? rewardUrl;
+  const StreakQuest({
+    required this.id,
+    required this.title,
+    required this.progress,
+    required this.target,
+    required this.status,
+    this.iconUrl,
+    this.rewardUrl,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['title'] = Variable<String>(title);
+    map['progress'] = Variable<int>(progress);
+    map['target'] = Variable<int>(target);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || iconUrl != null) {
+      map['icon_url'] = Variable<String>(iconUrl);
+    }
+    if (!nullToAbsent || rewardUrl != null) {
+      map['reward_url'] = Variable<String>(rewardUrl);
+    }
+    return map;
+  }
+
+  StreakQuestsCompanion toCompanion(bool nullToAbsent) {
+    return StreakQuestsCompanion(
+      id: Value(id),
+      title: Value(title),
+      progress: Value(progress),
+      target: Value(target),
+      status: Value(status),
+      iconUrl: iconUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(iconUrl),
+      rewardUrl: rewardUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rewardUrl),
+    );
+  }
+
+  factory StreakQuest.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StreakQuest(
+      id: serializer.fromJson<int>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      progress: serializer.fromJson<int>(json['progress']),
+      target: serializer.fromJson<int>(json['target']),
+      status: serializer.fromJson<String>(json['status']),
+      iconUrl: serializer.fromJson<String?>(json['iconUrl']),
+      rewardUrl: serializer.fromJson<String?>(json['rewardUrl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'title': serializer.toJson<String>(title),
+      'progress': serializer.toJson<int>(progress),
+      'target': serializer.toJson<int>(target),
+      'status': serializer.toJson<String>(status),
+      'iconUrl': serializer.toJson<String?>(iconUrl),
+      'rewardUrl': serializer.toJson<String?>(rewardUrl),
+    };
+  }
+
+  StreakQuest copyWith({
+    int? id,
+    String? title,
+    int? progress,
+    int? target,
+    String? status,
+    Value<String?> iconUrl = const Value.absent(),
+    Value<String?> rewardUrl = const Value.absent(),
+  }) => StreakQuest(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    progress: progress ?? this.progress,
+    target: target ?? this.target,
+    status: status ?? this.status,
+    iconUrl: iconUrl.present ? iconUrl.value : this.iconUrl,
+    rewardUrl: rewardUrl.present ? rewardUrl.value : this.rewardUrl,
+  );
+  StreakQuest copyWithCompanion(StreakQuestsCompanion data) {
+    return StreakQuest(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      progress: data.progress.present ? data.progress.value : this.progress,
+      target: data.target.present ? data.target.value : this.target,
+      status: data.status.present ? data.status.value : this.status,
+      iconUrl: data.iconUrl.present ? data.iconUrl.value : this.iconUrl,
+      rewardUrl: data.rewardUrl.present ? data.rewardUrl.value : this.rewardUrl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakQuest(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('progress: $progress, ')
+          ..write('target: $target, ')
+          ..write('status: $status, ')
+          ..write('iconUrl: $iconUrl, ')
+          ..write('rewardUrl: $rewardUrl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, title, progress, target, status, iconUrl, rewardUrl);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StreakQuest &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.progress == this.progress &&
+          other.target == this.target &&
+          other.status == this.status &&
+          other.iconUrl == this.iconUrl &&
+          other.rewardUrl == this.rewardUrl);
+}
+
+class StreakQuestsCompanion extends UpdateCompanion<StreakQuest> {
+  final Value<int> id;
+  final Value<String> title;
+  final Value<int> progress;
+  final Value<int> target;
+  final Value<String> status;
+  final Value<String?> iconUrl;
+  final Value<String?> rewardUrl;
+  const StreakQuestsCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.progress = const Value.absent(),
+    this.target = const Value.absent(),
+    this.status = const Value.absent(),
+    this.iconUrl = const Value.absent(),
+    this.rewardUrl = const Value.absent(),
+  });
+  StreakQuestsCompanion.insert({
+    this.id = const Value.absent(),
+    required String title,
+    required int progress,
+    required int target,
+    required String status,
+    this.iconUrl = const Value.absent(),
+    this.rewardUrl = const Value.absent(),
+  }) : title = Value(title),
+       progress = Value(progress),
+       target = Value(target),
+       status = Value(status);
+  static Insertable<StreakQuest> custom({
+    Expression<int>? id,
+    Expression<String>? title,
+    Expression<int>? progress,
+    Expression<int>? target,
+    Expression<String>? status,
+    Expression<String>? iconUrl,
+    Expression<String>? rewardUrl,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (progress != null) 'progress': progress,
+      if (target != null) 'target': target,
+      if (status != null) 'status': status,
+      if (iconUrl != null) 'icon_url': iconUrl,
+      if (rewardUrl != null) 'reward_url': rewardUrl,
+    });
+  }
+
+  StreakQuestsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? title,
+    Value<int>? progress,
+    Value<int>? target,
+    Value<String>? status,
+    Value<String?>? iconUrl,
+    Value<String?>? rewardUrl,
+  }) {
+    return StreakQuestsCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      progress: progress ?? this.progress,
+      target: target ?? this.target,
+      status: status ?? this.status,
+      iconUrl: iconUrl ?? this.iconUrl,
+      rewardUrl: rewardUrl ?? this.rewardUrl,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (progress.present) {
+      map['progress'] = Variable<int>(progress.value);
+    }
+    if (target.present) {
+      map['target'] = Variable<int>(target.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (iconUrl.present) {
+      map['icon_url'] = Variable<String>(iconUrl.value);
+    }
+    if (rewardUrl.present) {
+      map['reward_url'] = Variable<String>(rewardUrl.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakQuestsCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('progress: $progress, ')
+          ..write('target: $target, ')
+          ..write('status: $status, ')
+          ..write('iconUrl: $iconUrl, ')
+          ..write('rewardUrl: $rewardUrl')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StreakStatesTable extends StreakStates
+    with TableInfo<$StreakStatesTable, StreakState> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StreakStatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _streakDaysMeta = const VerificationMeta(
+    'streakDays',
+  );
+  @override
+  late final GeneratedColumn<int> streakDays = GeneratedColumn<int>(
+    'streak_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastResetYmdMeta = const VerificationMeta(
+    'lastResetYmd',
+  );
+  @override
+  late final GeneratedColumn<String> lastResetYmd = GeneratedColumn<String>(
+    'last_reset_ymd',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastCompletionYmdMeta = const VerificationMeta(
+    'lastCompletionYmd',
+  );
+  @override
+  late final GeneratedColumn<String> lastCompletionYmd =
+      GeneratedColumn<String>(
+        'last_completion_ymd',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    streakDays,
+    lastResetYmd,
+    lastCompletionYmd,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'streak_states';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StreakState> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('streak_days')) {
+      context.handle(
+        _streakDaysMeta,
+        streakDays.isAcceptableOrUnknown(data['streak_days']!, _streakDaysMeta),
+      );
+    }
+    if (data.containsKey('last_reset_ymd')) {
+      context.handle(
+        _lastResetYmdMeta,
+        lastResetYmd.isAcceptableOrUnknown(
+          data['last_reset_ymd']!,
+          _lastResetYmdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_completion_ymd')) {
+      context.handle(
+        _lastCompletionYmdMeta,
+        lastCompletionYmd.isAcceptableOrUnknown(
+          data['last_completion_ymd']!,
+          _lastCompletionYmdMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StreakState map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StreakState(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      streakDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}streak_days'],
+      )!,
+      lastResetYmd: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_reset_ymd'],
+      ),
+      lastCompletionYmd: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_completion_ymd'],
+      ),
+    );
+  }
+
+  @override
+  $StreakStatesTable createAlias(String alias) {
+    return $StreakStatesTable(attachedDatabase, alias);
+  }
+}
+
+class StreakState extends DataClass implements Insertable<StreakState> {
+  final int id;
+  final int streakDays;
+  final String? lastResetYmd;
+  final String? lastCompletionYmd;
+  const StreakState({
+    required this.id,
+    required this.streakDays,
+    this.lastResetYmd,
+    this.lastCompletionYmd,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['streak_days'] = Variable<int>(streakDays);
+    if (!nullToAbsent || lastResetYmd != null) {
+      map['last_reset_ymd'] = Variable<String>(lastResetYmd);
+    }
+    if (!nullToAbsent || lastCompletionYmd != null) {
+      map['last_completion_ymd'] = Variable<String>(lastCompletionYmd);
+    }
+    return map;
+  }
+
+  StreakStatesCompanion toCompanion(bool nullToAbsent) {
+    return StreakStatesCompanion(
+      id: Value(id),
+      streakDays: Value(streakDays),
+      lastResetYmd: lastResetYmd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastResetYmd),
+      lastCompletionYmd: lastCompletionYmd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastCompletionYmd),
+    );
+  }
+
+  factory StreakState.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StreakState(
+      id: serializer.fromJson<int>(json['id']),
+      streakDays: serializer.fromJson<int>(json['streakDays']),
+      lastResetYmd: serializer.fromJson<String?>(json['lastResetYmd']),
+      lastCompletionYmd: serializer.fromJson<String?>(
+        json['lastCompletionYmd'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'streakDays': serializer.toJson<int>(streakDays),
+      'lastResetYmd': serializer.toJson<String?>(lastResetYmd),
+      'lastCompletionYmd': serializer.toJson<String?>(lastCompletionYmd),
+    };
+  }
+
+  StreakState copyWith({
+    int? id,
+    int? streakDays,
+    Value<String?> lastResetYmd = const Value.absent(),
+    Value<String?> lastCompletionYmd = const Value.absent(),
+  }) => StreakState(
+    id: id ?? this.id,
+    streakDays: streakDays ?? this.streakDays,
+    lastResetYmd: lastResetYmd.present ? lastResetYmd.value : this.lastResetYmd,
+    lastCompletionYmd: lastCompletionYmd.present
+        ? lastCompletionYmd.value
+        : this.lastCompletionYmd,
+  );
+  StreakState copyWithCompanion(StreakStatesCompanion data) {
+    return StreakState(
+      id: data.id.present ? data.id.value : this.id,
+      streakDays: data.streakDays.present
+          ? data.streakDays.value
+          : this.streakDays,
+      lastResetYmd: data.lastResetYmd.present
+          ? data.lastResetYmd.value
+          : this.lastResetYmd,
+      lastCompletionYmd: data.lastCompletionYmd.present
+          ? data.lastCompletionYmd.value
+          : this.lastCompletionYmd,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakState(')
+          ..write('id: $id, ')
+          ..write('streakDays: $streakDays, ')
+          ..write('lastResetYmd: $lastResetYmd, ')
+          ..write('lastCompletionYmd: $lastCompletionYmd')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, streakDays, lastResetYmd, lastCompletionYmd);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StreakState &&
+          other.id == this.id &&
+          other.streakDays == this.streakDays &&
+          other.lastResetYmd == this.lastResetYmd &&
+          other.lastCompletionYmd == this.lastCompletionYmd);
+}
+
+class StreakStatesCompanion extends UpdateCompanion<StreakState> {
+  final Value<int> id;
+  final Value<int> streakDays;
+  final Value<String?> lastResetYmd;
+  final Value<String?> lastCompletionYmd;
+  const StreakStatesCompanion({
+    this.id = const Value.absent(),
+    this.streakDays = const Value.absent(),
+    this.lastResetYmd = const Value.absent(),
+    this.lastCompletionYmd = const Value.absent(),
+  });
+  StreakStatesCompanion.insert({
+    this.id = const Value.absent(),
+    this.streakDays = const Value.absent(),
+    this.lastResetYmd = const Value.absent(),
+    this.lastCompletionYmd = const Value.absent(),
+  });
+  static Insertable<StreakState> custom({
+    Expression<int>? id,
+    Expression<int>? streakDays,
+    Expression<String>? lastResetYmd,
+    Expression<String>? lastCompletionYmd,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (streakDays != null) 'streak_days': streakDays,
+      if (lastResetYmd != null) 'last_reset_ymd': lastResetYmd,
+      if (lastCompletionYmd != null) 'last_completion_ymd': lastCompletionYmd,
+    });
+  }
+
+  StreakStatesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? streakDays,
+    Value<String?>? lastResetYmd,
+    Value<String?>? lastCompletionYmd,
+  }) {
+    return StreakStatesCompanion(
+      id: id ?? this.id,
+      streakDays: streakDays ?? this.streakDays,
+      lastResetYmd: lastResetYmd ?? this.lastResetYmd,
+      lastCompletionYmd: lastCompletionYmd ?? this.lastCompletionYmd,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (streakDays.present) {
+      map['streak_days'] = Variable<int>(streakDays.value);
+    }
+    if (lastResetYmd.present) {
+      map['last_reset_ymd'] = Variable<String>(lastResetYmd.value);
+    }
+    if (lastCompletionYmd.present) {
+      map['last_completion_ymd'] = Variable<String>(lastCompletionYmd.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakStatesCompanion(')
+          ..write('id: $id, ')
+          ..write('streakDays: $streakDays, ')
+          ..write('lastResetYmd: $lastResetYmd, ')
+          ..write('lastCompletionYmd: $lastCompletionYmd')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $QuestsTable quests = $QuestsTable(this);
   late final $WeeklyQuestsTable weeklyQuests = $WeeklyQuestsTable(this);
+  late final $StreakQuestsTable streakQuests = $StreakQuestsTable(this);
+  late final $StreakStatesTable streakStates = $StreakStatesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [quests, weeklyQuests];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    quests,
+    weeklyQuests,
+    streakQuests,
+    streakStates,
+  ];
 }
 
 typedef $$QuestsTableCreateCompanionBuilder =
@@ -1350,6 +2116,419 @@ typedef $$WeeklyQuestsTableProcessedTableManager =
       WeeklyQuest,
       PrefetchHooks Function()
     >;
+typedef $$StreakQuestsTableCreateCompanionBuilder =
+    StreakQuestsCompanion Function({
+      Value<int> id,
+      required String title,
+      required int progress,
+      required int target,
+      required String status,
+      Value<String?> iconUrl,
+      Value<String?> rewardUrl,
+    });
+typedef $$StreakQuestsTableUpdateCompanionBuilder =
+    StreakQuestsCompanion Function({
+      Value<int> id,
+      Value<String> title,
+      Value<int> progress,
+      Value<int> target,
+      Value<String> status,
+      Value<String?> iconUrl,
+      Value<String?> rewardUrl,
+    });
+
+class $$StreakQuestsTableFilterComposer
+    extends Composer<_$AppDatabase, $StreakQuestsTable> {
+  $$StreakQuestsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get progress => $composableBuilder(
+    column: $table.progress,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get target => $composableBuilder(
+    column: $table.target,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get iconUrl => $composableBuilder(
+    column: $table.iconUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rewardUrl => $composableBuilder(
+    column: $table.rewardUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$StreakQuestsTableOrderingComposer
+    extends Composer<_$AppDatabase, $StreakQuestsTable> {
+  $$StreakQuestsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get progress => $composableBuilder(
+    column: $table.progress,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get target => $composableBuilder(
+    column: $table.target,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get iconUrl => $composableBuilder(
+    column: $table.iconUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rewardUrl => $composableBuilder(
+    column: $table.rewardUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$StreakQuestsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StreakQuestsTable> {
+  $$StreakQuestsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get progress =>
+      $composableBuilder(column: $table.progress, builder: (column) => column);
+
+  GeneratedColumn<int> get target =>
+      $composableBuilder(column: $table.target, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get iconUrl =>
+      $composableBuilder(column: $table.iconUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get rewardUrl =>
+      $composableBuilder(column: $table.rewardUrl, builder: (column) => column);
+}
+
+class $$StreakQuestsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StreakQuestsTable,
+          StreakQuest,
+          $$StreakQuestsTableFilterComposer,
+          $$StreakQuestsTableOrderingComposer,
+          $$StreakQuestsTableAnnotationComposer,
+          $$StreakQuestsTableCreateCompanionBuilder,
+          $$StreakQuestsTableUpdateCompanionBuilder,
+          (
+            StreakQuest,
+            BaseReferences<_$AppDatabase, $StreakQuestsTable, StreakQuest>,
+          ),
+          StreakQuest,
+          PrefetchHooks Function()
+        > {
+  $$StreakQuestsTableTableManager(_$AppDatabase db, $StreakQuestsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StreakQuestsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StreakQuestsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StreakQuestsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<int> progress = const Value.absent(),
+                Value<int> target = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> iconUrl = const Value.absent(),
+                Value<String?> rewardUrl = const Value.absent(),
+              }) => StreakQuestsCompanion(
+                id: id,
+                title: title,
+                progress: progress,
+                target: target,
+                status: status,
+                iconUrl: iconUrl,
+                rewardUrl: rewardUrl,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String title,
+                required int progress,
+                required int target,
+                required String status,
+                Value<String?> iconUrl = const Value.absent(),
+                Value<String?> rewardUrl = const Value.absent(),
+              }) => StreakQuestsCompanion.insert(
+                id: id,
+                title: title,
+                progress: progress,
+                target: target,
+                status: status,
+                iconUrl: iconUrl,
+                rewardUrl: rewardUrl,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$StreakQuestsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StreakQuestsTable,
+      StreakQuest,
+      $$StreakQuestsTableFilterComposer,
+      $$StreakQuestsTableOrderingComposer,
+      $$StreakQuestsTableAnnotationComposer,
+      $$StreakQuestsTableCreateCompanionBuilder,
+      $$StreakQuestsTableUpdateCompanionBuilder,
+      (
+        StreakQuest,
+        BaseReferences<_$AppDatabase, $StreakQuestsTable, StreakQuest>,
+      ),
+      StreakQuest,
+      PrefetchHooks Function()
+    >;
+typedef $$StreakStatesTableCreateCompanionBuilder =
+    StreakStatesCompanion Function({
+      Value<int> id,
+      Value<int> streakDays,
+      Value<String?> lastResetYmd,
+      Value<String?> lastCompletionYmd,
+    });
+typedef $$StreakStatesTableUpdateCompanionBuilder =
+    StreakStatesCompanion Function({
+      Value<int> id,
+      Value<int> streakDays,
+      Value<String?> lastResetYmd,
+      Value<String?> lastCompletionYmd,
+    });
+
+class $$StreakStatesTableFilterComposer
+    extends Composer<_$AppDatabase, $StreakStatesTable> {
+  $$StreakStatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get streakDays => $composableBuilder(
+    column: $table.streakDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastResetYmd => $composableBuilder(
+    column: $table.lastResetYmd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastCompletionYmd => $composableBuilder(
+    column: $table.lastCompletionYmd,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$StreakStatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $StreakStatesTable> {
+  $$StreakStatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get streakDays => $composableBuilder(
+    column: $table.streakDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastResetYmd => $composableBuilder(
+    column: $table.lastResetYmd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastCompletionYmd => $composableBuilder(
+    column: $table.lastCompletionYmd,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$StreakStatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StreakStatesTable> {
+  $$StreakStatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get streakDays => $composableBuilder(
+    column: $table.streakDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastResetYmd => $composableBuilder(
+    column: $table.lastResetYmd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastCompletionYmd => $composableBuilder(
+    column: $table.lastCompletionYmd,
+    builder: (column) => column,
+  );
+}
+
+class $$StreakStatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StreakStatesTable,
+          StreakState,
+          $$StreakStatesTableFilterComposer,
+          $$StreakStatesTableOrderingComposer,
+          $$StreakStatesTableAnnotationComposer,
+          $$StreakStatesTableCreateCompanionBuilder,
+          $$StreakStatesTableUpdateCompanionBuilder,
+          (
+            StreakState,
+            BaseReferences<_$AppDatabase, $StreakStatesTable, StreakState>,
+          ),
+          StreakState,
+          PrefetchHooks Function()
+        > {
+  $$StreakStatesTableTableManager(_$AppDatabase db, $StreakStatesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StreakStatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StreakStatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StreakStatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> streakDays = const Value.absent(),
+                Value<String?> lastResetYmd = const Value.absent(),
+                Value<String?> lastCompletionYmd = const Value.absent(),
+              }) => StreakStatesCompanion(
+                id: id,
+                streakDays: streakDays,
+                lastResetYmd: lastResetYmd,
+                lastCompletionYmd: lastCompletionYmd,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> streakDays = const Value.absent(),
+                Value<String?> lastResetYmd = const Value.absent(),
+                Value<String?> lastCompletionYmd = const Value.absent(),
+              }) => StreakStatesCompanion.insert(
+                id: id,
+                streakDays: streakDays,
+                lastResetYmd: lastResetYmd,
+                lastCompletionYmd: lastCompletionYmd,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$StreakStatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StreakStatesTable,
+      StreakState,
+      $$StreakStatesTableFilterComposer,
+      $$StreakStatesTableOrderingComposer,
+      $$StreakStatesTableAnnotationComposer,
+      $$StreakStatesTableCreateCompanionBuilder,
+      $$StreakStatesTableUpdateCompanionBuilder,
+      (
+        StreakState,
+        BaseReferences<_$AppDatabase, $StreakStatesTable, StreakState>,
+      ),
+      StreakState,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1358,4 +2537,8 @@ class $AppDatabaseManager {
       $$QuestsTableTableManager(_db, _db.quests);
   $$WeeklyQuestsTableTableManager get weeklyQuests =>
       $$WeeklyQuestsTableTableManager(_db, _db.weeklyQuests);
+  $$StreakQuestsTableTableManager get streakQuests =>
+      $$StreakQuestsTableTableManager(_db, _db.streakQuests);
+  $$StreakStatesTableTableManager get streakStates =>
+      $$StreakStatesTableTableManager(_db, _db.streakStates);
 }
