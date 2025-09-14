@@ -270,6 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const Positioned(top: 16, left: 16, child: CornerDecoration()),
+                Positioned(bottom: 16, left: 16, child: _HomeBadgeButton()),
                 const Positioned(
                   top: 12,
                   right: 12,
@@ -299,6 +300,46 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _HomeBadgeButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).pop('refresh'),
+      child: Container(
+        width: 96,
+        height: 96,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF6EED6),
+          shape: BoxShape.circle,
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(color: const Color(0xFFBE9E6A), width: 6),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const <Widget>[
+            Icon(Icons.home, color: colorText, size: 34),
+            SizedBox(height: 2),
+            Text(
+              'HOME',
+              style: TextStyle(
+                color: colorText,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

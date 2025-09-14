@@ -399,10 +399,12 @@ class QuestGridView extends StatelessWidget {
     required this.quests,
     required this.onComplete,
     this.onDelete,
+    this.emptyMessage,
   });
   final List<Quest> quests;
   final void Function(int id) onComplete;
   final void Function(int id)? onDelete;
+  final String? emptyMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -439,9 +441,9 @@ class QuestGridView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              '일일 임무를 등록하세요',
-              style: TextStyle(
+            Text(
+              emptyMessage ?? '일일 임무를 등록하세요',
+              style: const TextStyle(
                 color: colorText,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,

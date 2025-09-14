@@ -49,6 +49,69 @@ class DatabaseService {
         .toList();
   }
 
+  // Weekly CRUD
+  Future<int> insertWeeklyQuest(domain.Quest quest) async {
+    await _db.upsertWeeklyQuest(
+      WeeklyQuestsCompanion(
+        id: drift.Value(quest.id),
+        title: drift.Value(quest.title),
+        progress: drift.Value(quest.progress),
+        target: drift.Value(quest.target),
+        status: drift.Value(
+          quest.status == domain.QuestStatus.completed
+              ? 'completed'
+              : 'incomplete',
+        ),
+        iconUrl: drift.Value(quest.iconUrl),
+        rewardUrl: drift.Value(quest.rewardUrl),
+      ),
+    );
+    return quest.id;
+  }
+
+  Future<List<domain.Quest>> getAllWeeklyQuests() async {
+    final rows = await _db.getAllWeeklyQuests();
+    return rows
+        .map(
+          (r) => domain.Quest(
+            id: r.id,
+            title: r.title,
+            progress: r.progress,
+            target: r.target,
+            status: r.status == 'completed'
+                ? domain.QuestStatus.completed
+                : domain.QuestStatus.incomplete,
+            iconUrl: r.iconUrl,
+            rewardUrl: r.rewardUrl,
+          ),
+        )
+        .toList();
+  }
+
+  Future<int> updateWeeklyQuest(domain.Quest quest) async {
+    await _db.upsertWeeklyQuest(
+      WeeklyQuestsCompanion(
+        id: drift.Value(quest.id),
+        title: drift.Value(quest.title),
+        progress: drift.Value(quest.progress),
+        target: drift.Value(quest.target),
+        status: drift.Value(
+          quest.status == domain.QuestStatus.completed
+              ? 'completed'
+              : 'incomplete',
+        ),
+        iconUrl: drift.Value(quest.iconUrl),
+        rewardUrl: drift.Value(quest.rewardUrl),
+      ),
+    );
+    return 1;
+  }
+
+  Future<int> deleteWeeklyQuest(int id) async {
+    await _db.deleteWeeklyQuestById(id);
+    return 1;
+  }
+
   Future<domain.Quest?> getQuest(int id) async {
     final list = await _db.getAllQuests();
     final r = list.where((e) => e.id == id).cast<domain.Quest?>();

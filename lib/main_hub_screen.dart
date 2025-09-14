@@ -3,21 +3,72 @@ import 'dart:math' as math;
 import 'constants.dart';
 import 'home_screen.dart';
 import 'widgets.dart';
+import 'models.dart';
+import 'services/database_service.dart';
+import 'weekly_screens.dart';
 
-class MainHubScreen extends StatelessWidget {
+class MainHubScreen extends StatefulWidget {
   const MainHubScreen({super.key});
+  @override
+  State<MainHubScreen> createState() => _MainHubScreenState();
+}
 
-  void _openDaily(BuildContext context) {
-    Navigator.of(
+class _MainHubScreenState extends State<MainHubScreen> {
+  final DatabaseService _db = DatabaseService();
+  int _total = 0;
+  int _completed = 0;
+  int _weeklyTotal = 0;
+  int _weeklyCompleted = 0;
+  int _streakDays = 0; // TODO: compute real streak when available
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCounts();
+  }
+
+  Future<void> _loadCounts() async {
+    try {
+      final List<Quest> quests = await _db.getAllQuests();
+      final List<Quest> weekly = await _db.getAllWeeklyQuests();
+      final int completed = quests.where((q) => q.isCompleted).length;
+      final int wCompleted = weekly.where((q) => q.isCompleted).length;
+      setState(() {
+        _total = quests.length;
+        _completed = completed;
+        _weeklyTotal = weekly.length;
+        _weeklyCompleted = wCompleted;
+        // Placeholder: streak not tracked yet
+        _streakDays = 0;
+      });
+    } catch (_) {
+      setState(() {
+        _total = 0;
+        _completed = 0;
+        _weeklyTotal = 0;
+        _weeklyCompleted = 0;
+        _streakDays = 0;
+      });
+    }
+  }
+
+  Future<void> _openDaily(BuildContext context) async {
+    final result = await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const HomeScreen()));
+    if (result == 'refresh') {
+      _loadCounts();
+    }
   }
 
   void _openWeekly(BuildContext context) {
-    // Placeholder: Could push a future WeeklyScreen
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('주간 임무는 곧 제공됩니다.')));
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const WeeklyHomeScreen()))
+        .then((result) {
+          if (result == 'refresh') {
+            _loadCounts();
+          }
+        });
   }
 
   void _openStreak(BuildContext context) {
@@ -40,38 +91,56 @@ class MainHubScreen extends StatelessWidget {
                 constraints: const BoxConstraints(maxWidth: 1100),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: colorPaper.withOpacity(0.92),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: <BoxShadow>[
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 12,
-                          offset: const Offset(0, 6),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: FractionallySizedBox(
+                      widthFactor: 0.88,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: colorPaper.withOpacity(0.92),
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: <Widget>[
-                              _MissionRow(
-                                onTapDaily: () => _openDaily(context),
-                                onTapWeekly: () => _openWeekly(context),
-                                onTapStreak: () => _openStreak(context),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                64,
+                                16,
+                                16,
                               ),
-                              const SizedBox(height: 24),
-                              const _OwnedItemsSection(),
-                            ],
-                          ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: <Widget>[
+                                  _MissionRow(
+                                    onTapDaily: () => _openDaily(context),
+                                    onTapWeekly: () => _openWeekly(context),
+                                    onTapStreak: () => _openStreak(context),
+                                    dailySubtitle: '$_completed/$_total',
+                                    weeklySubtitle:
+                                        '$_weeklyCompleted/$_weeklyTotal',
+                                    streakSubtitle: 'Day $_streakDays',
+                                  ),
+                                  const SizedBox(height: 24),
+                                  const _OwnedItemsSection(),
+                                ],
+                              ),
+                            ),
+                            const HeaderBar(
+                              title: 'Daily Quest',
+                              showTimer: false,
+                            ),
+                          ],
                         ),
-                        const HeaderBar(title: 'Daily Quest', showTimer: false),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -94,10 +163,16 @@ class _MissionRow extends StatelessWidget {
     required this.onTapDaily,
     required this.onTapWeekly,
     required this.onTapStreak,
+    required this.dailySubtitle,
+    required this.weeklySubtitle,
+    required this.streakSubtitle,
   });
   final VoidCallback onTapDaily;
   final VoidCallback onTapWeekly;
   final VoidCallback onTapStreak;
+  final String dailySubtitle;
+  final String weeklySubtitle;
+  final String streakSubtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +181,7 @@ class _MissionRow extends StatelessWidget {
         Expanded(
           child: _MissionTile(
             title: '일일 임무',
-            subtitle: '3/5',
+            subtitle: dailySubtitle,
             onTap: onTapDaily,
           ),
         ),
@@ -114,7 +189,7 @@ class _MissionRow extends StatelessWidget {
         Expanded(
           child: _MissionTile(
             title: '주간 임무',
-            subtitle: '1/3',
+            subtitle: weeklySubtitle,
             onTap: onTapWeekly,
           ),
         ),
@@ -122,7 +197,7 @@ class _MissionRow extends StatelessWidget {
         Expanded(
           child: _MissionTile(
             title: '연속 임무',
-            subtitle: 'Day 7',
+            subtitle: streakSubtitle,
             onTap: onTapStreak,
           ),
         ),
