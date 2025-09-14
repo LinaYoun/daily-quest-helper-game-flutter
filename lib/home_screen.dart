@@ -81,7 +81,28 @@ class _HomeScreenState extends State<HomeScreen> {
     _quests.value = await _db.getAllQuests();
   }
 
-  void _handleClaimReward() => _activeReward.value = null;
+  void _handleClaimReward() async {
+    final (int itemId, String key) = await _db.addRandomOwnedItem();
+    _activeReward.value = null;
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.35),
+      builder: (_) => Stack(
+        children: <Widget>[
+          ItemAwardDialog(
+            itemId: itemId,
+            itemKey: key,
+            onClose: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pop('refresh');
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _handleDeleteQuest(int id) async {
     final confirmed = await showDialog<bool>(

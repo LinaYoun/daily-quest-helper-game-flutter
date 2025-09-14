@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import 'dart:math' as math;
+// math not used in this file after refactor
 import 'dart:convert';
 import 'constants.dart';
 import 'models.dart';
 import 'quest_icon_painter.dart';
+import 'owned_item_painters.dart';
 
 // Custom quest icons with colorful style
 class QuestGlyph extends StatelessWidget {
@@ -928,6 +931,282 @@ class RewardDialog extends StatelessWidget {
       ),
     );
   }
+}
+
+// Item award dialog shown after pressing Claim
+class ItemAwardDialog extends StatelessWidget {
+  const ItemAwardDialog({
+    super.key,
+    required this.itemId,
+    required this.itemKey,
+    required this.onClose,
+  });
+  final int itemId; // 1 star, 2 flower, 3 butterfly, 4 bow
+  final String itemKey;
+  final VoidCallback onClose;
+
+  Widget _iconFor(int id) {
+    const double s = 140;
+    switch (id) {
+      case 1:
+        return SizedBox(
+          width: s,
+          height: s,
+          child: CustomPaint(painter: ItemStarPainter()),
+        );
+      case 2:
+        return SizedBox(
+          width: s,
+          height: s,
+          child: CustomPaint(painter: ItemFlowerPainter()),
+        );
+      case 3:
+        return SizedBox(
+          width: s,
+          height: s,
+          child: CustomPaint(painter: ItemButterflyPainter()),
+        );
+      default:
+        return SizedBox(
+          width: s,
+          height: s,
+          child: CustomPaint(painter: ItemBowPainter()),
+        );
+    }
+  }
+
+  String _labelFor(int id) {
+    switch (id) {
+      case 1:
+        return '별 x1';
+      case 2:
+        return '화분 x1';
+      case 3:
+        return '나비 x1';
+      default:
+        return '리본 x1';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withOpacity(0.6),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: 600,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 1040),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            decoration: BoxDecoration(
+              color: colorPaper,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                // Header badge style
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kChipFillAlt,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    '보상 획득!',
+                    style: TextStyle(
+                      color: colorText,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  '새로운 꾸미기 아이템 획득!',
+                  style: TextStyle(
+                    color: colorText,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _iconFor(itemId),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kChipFillAlt,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    _labelFor(itemId),
+                    style: const TextStyle(
+                      color: colorText,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 36,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    elevation: 6,
+                  ),
+                  onPressed: onClose,
+                  child: const Text(
+                    '확인',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Lightweight award painters used by ItemAwardDialog
+class AwardStarPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+    final Offset c = Offset(w / 2, h / 2 - h * 0.06);
+    final double outerR = (w * 0.46);
+    final double innerR = outerR * 0.48;
+
+    double mcos(double a) => math.cos(a);
+    double msin(double a) => math.sin(a);
+
+    Path buildStar(double rOuter, double rInner) {
+      final Path p = Path();
+      for (int i = 0; i < 10; i++) {
+        final double angle = (-90 + i * 36) * 3.1415926535 / 180.0;
+        final double r = (i % 2 == 0) ? rOuter : rInner;
+        final Offset pt = Offset(
+          c.dx + r * mcos(angle),
+          c.dy + r * msin(angle),
+        );
+        if (i == 0) {
+          p.moveTo(pt.dx, pt.dy);
+        } else {
+          p.lineTo(pt.dx, pt.dy);
+        }
+      }
+      p.close();
+      return p;
+    }
+
+    final Path star = buildStar(outerR, innerR);
+    const Color fillLight = Color(0xFFFFF2C9);
+    const Color fillMid = Color(0xFFFFE6A9);
+    const Color strokeBrown = Color(0xFF6E5338);
+    const Color innerLine = Color(0xFFE6D08C);
+
+    final Paint fill = Paint()
+      ..shader = RadialGradient(
+        colors: const [fillLight, fillMid],
+      ).createShader(Rect.fromCircle(center: c, radius: outerR));
+    canvas.drawPath(star, fill);
+    canvas.drawPath(
+      star,
+      Paint()
+        ..color = strokeBrown
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2
+        ..strokeJoin = StrokeJoin.round,
+    );
+    final Path innerStar = buildStar(outerR * 0.62, innerR * 0.62);
+    canvas.drawPath(
+      innerStar,
+      Paint()
+        ..color = innerLine
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class AwardFlowerPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Simple badge circle matching flower palette
+    final Rect r = Offset.zero & size;
+    const Color potFill = Color(0xFFD6C9B5);
+    canvas.drawOval(
+      r.deflate(size.shortestSide * 0.18),
+      Paint()..color = potFill,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class AwardButterflyPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Rect r = Offset.zero & size;
+    const Color wing = Color(0xFFAED6FB);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        r.deflate(size.shortestSide * 0.18),
+        Radius.circular(18),
+      ),
+      Paint()..color = wing,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class AwardBowPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Rect r = Offset.zero & size;
+    const Color bow = Color(0xFFE07D73);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        r.deflate(size.shortestSide * 0.22),
+        Radius.circular(24),
+      ),
+      Paint()..color = bow,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class RegisterQuestScreen extends StatelessWidget {

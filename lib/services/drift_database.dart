@@ -54,12 +54,24 @@ class StreakStates extends Table {
   Set<Column<Object>>? get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Quests, WeeklyQuests, StreakQuests, StreakStates])
+// Inventory of owned decoration items shown on the main hub
+class OwnedItems extends Table {
+  IntColumn get id => integer()(); // 1:star, 2:flower, 3:butterfly, 4:bow
+  TextColumn get key => text()(); // semantic key for future-proofing
+  IntColumn get count => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column<Object>>? get primaryKey => {id};
+}
+
+@DriftDatabase(
+  tables: [Quests, WeeklyQuests, StreakQuests, StreakStates, OwnedItems],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -75,6 +87,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) {
         await m.createTable(streakStates);
+      }
+      if (from < 5) {
+        await m.createTable(ownedItems);
       }
     },
   );
@@ -106,6 +121,13 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> upsertStreakState(StreakStatesCompanion data) async {
     await into(streakStates).insertOnConflictUpdate(data);
+  }
+
+  // Owned items helpers
+  Future<List<OwnedItem>> getAllOwnedItems() async => select(ownedItems).get();
+
+  Future<void> upsertOwnedItem(OwnedItemsCompanion data) async {
+    await into(ownedItems).insertOnConflictUpdate(data);
   }
 
   Future<void> deleteQuestById(int questId) async {

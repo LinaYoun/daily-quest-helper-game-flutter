@@ -1,410 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'constants.dart';
-import 'home_screen.dart';
-import 'widgets.dart';
-import 'models.dart';
-import 'services/database_service.dart';
-import 'weekly_screens.dart';
-import 'streak_screens.dart';
 
-class MainHubScreen extends StatefulWidget {
-  const MainHubScreen({super.key});
-  @override
-  State<MainHubScreen> createState() => _MainHubScreenState();
-}
+// Public painters identical to the icons used on the Main Hub "Owned Items" grid.
 
-class _MainHubScreenState extends State<MainHubScreen> {
-  final DatabaseService _db = DatabaseService();
-  int _total = 0;
-  int _completed = 0;
-  int _weeklyTotal = 0;
-  int _weeklyCompleted = 0;
-  int _streakDays = 0; // TODO: compute real streak when available
-  Map<int, int> _ownedCounts = const {1: 0, 2: 0, 3: 0, 4: 0};
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCounts();
-  }
-
-  Future<void> _loadCounts() async {
-    try {
-      final List<Quest> quests = await _db.getAllQuests();
-      final List<Quest> weekly = await _db.getAllWeeklyQuests();
-      final (int streakDays, String? lastResetYmd, String? lastCompletionYmd) =
-          await _db.getStreakState();
-      final Map<int, int> owned = await _db.getOwnedItemCounts();
-      final int completed = quests.where((q) => q.isCompleted).length;
-      final int wCompleted = weekly.where((q) => q.isCompleted).length;
-      setState(() {
-        _total = quests.length;
-        _completed = completed;
-        _weeklyTotal = weekly.length;
-        _weeklyCompleted = wCompleted;
-        _streakDays = streakDays;
-        _ownedCounts = owned;
-      });
-    } catch (_) {
-      setState(() {
-        _total = 0;
-        _completed = 0;
-        _weeklyTotal = 0;
-        _weeklyCompleted = 0;
-        _streakDays = 0;
-        _ownedCounts = const {1: 0, 2: 0, 3: 0, 4: 0};
-      });
-    }
-  }
-
-  Future<void> _openDaily(BuildContext context) async {
-    final result = await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const HomeScreen()));
-    if (result == 'refresh') {
-      _loadCounts();
-    }
-  }
-
-  void _openWeekly(BuildContext context) {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => const WeeklyHomeScreen()))
-        .then((result) {
-          if (result == 'refresh') {
-            _loadCounts();
-          }
-        });
-  }
-
-  void _openStreak(BuildContext context) {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => const StreakHomeScreen()))
-        .then((result) {
-          if (result == 'refresh') {
-            _loadCounts();
-          }
-        });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: colorBackground,
-      body: SafeArea(
-        child: Stack(
-          children: <Widget>[
-            const Positioned.fill(child: PatternBackground()),
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1100),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: FractionallySizedBox(
-                      widthFactor: 0.88,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: colorPaper.withOpacity(0.92),
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: <BoxShadow>[
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 12,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                16,
-                                64,
-                                16,
-                                16,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: <Widget>[
-                                  _MissionRow(
-                                    onTapDaily: () => _openDaily(context),
-                                    onTapWeekly: () => _openWeekly(context),
-                                    onTapStreak: () => _openStreak(context),
-                                    dailySubtitle: '$_completed/$_total',
-                                    weeklySubtitle:
-                                        '$_weeklyCompleted/$_weeklyTotal',
-                                    streakSubtitle: 'Day $_streakDays',
-                                  ),
-                                  const SizedBox(height: 24),
-                                  _OwnedItemsSection(counts: _ownedCounts),
-                                ],
-                              ),
-                            ),
-                            const HeaderBar(
-                              title: 'Daily Quest',
-                              showTimer: false,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const Positioned(
-              top: 12,
-              right: 12,
-              child: TopRightCharacterBadge(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MissionRow extends StatelessWidget {
-  const _MissionRow({
-    required this.onTapDaily,
-    required this.onTapWeekly,
-    required this.onTapStreak,
-    required this.dailySubtitle,
-    required this.weeklySubtitle,
-    required this.streakSubtitle,
-  });
-  final VoidCallback onTapDaily;
-  final VoidCallback onTapWeekly;
-  final VoidCallback onTapStreak;
-  final String dailySubtitle;
-  final String weeklySubtitle;
-  final String streakSubtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: _MissionTile(
-            title: '일일 임무',
-            subtitle: dailySubtitle,
-            onTap: onTapDaily,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _MissionTile(
-            title: '주간 임무',
-            subtitle: weeklySubtitle,
-            onTap: onTapWeekly,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _MissionTile(
-            title: '연속 임무',
-            subtitle: streakSubtitle,
-            onTap: onTapStreak,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MissionTile extends StatelessWidget {
-  const _MissionTile({
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: CustomPaint(
-        painter: const DashedRRectPainter(
-          strokeColor: kCardStroke,
-          fillColor: kCardFill,
-          radius: kQuestCardRadius,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                title,
-                style: const TextStyle(
-                  color: colorText,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: kChipFillAlt,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: colorText,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _OwnedItemsSection extends StatelessWidget {
-  const _OwnedItemsSection({required this.counts});
-  final Map<int, int> counts;
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          children: const <Widget>[
-            Icon(Icons.brush, color: colorText),
-            SizedBox(width: 8),
-            Text(
-              '가진 꾸미기 아이템',
-              style: TextStyle(
-                color: colorText,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 4,
-          childAspectRatio: 0.9,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          children: <Widget>[
-            _ItemCard(
-              graphic: SizedBox(
-                width: 150,
-                height: 150,
-                child: CustomPaint(painter: _StarItemPainter()),
-              ),
-              label: 'x${counts[1] ?? 0}',
-              iconSize: 150,
-            ),
-            _ItemCard(
-              graphic: SizedBox(
-                width: 150,
-                height: 150,
-                child: CustomPaint(painter: _FlowerItemPainter()),
-              ),
-              label: 'x${counts[2] ?? 0}',
-              iconSize: 150,
-            ),
-            _ItemCard(
-              graphic: SizedBox(
-                width: 150,
-                height: 150,
-                child: CustomPaint(painter: _ButterflyItemPainter()),
-              ),
-              label: 'x${counts[3] ?? 0}',
-              iconSize: 150,
-            ),
-            _ItemCard(
-              graphic: SizedBox(
-                width: 150,
-                height: 150,
-                child: CustomPaint(painter: _BowItemPainter()),
-              ),
-              label: 'x${counts[4] ?? 0}',
-              iconSize: 150,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _ItemCard extends StatelessWidget {
-  const _ItemCard({
-    this.icon,
-    this.graphic,
-    required this.label,
-    this.iconSize = 44,
-  }) : assert(
-         icon != null || graphic != null,
-         'Either icon or graphic must be provided',
-       );
-  final IconData? icon;
-  final Widget? graphic;
-  final String label;
-  final double iconSize;
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: const DashedRRectPainter(
-        strokeColor: kCardStroke,
-        fillColor: kCardFill,
-        radius: kQuestCardRadius,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          if (graphic != null)
-            SizedBox(
-              width: iconSize,
-              height: iconSize,
-              child: Center(child: graphic),
-            )
-          else
-            Icon(icon, size: iconSize, color: colorText),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: kChipFillAlt,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                color: colorText,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StarItemPainter extends CustomPainter {
+class ItemStarPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final double w = size.width;
@@ -497,14 +96,13 @@ class _StarItemPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _FlowerItemPainter extends CustomPainter {
+class ItemFlowerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final double w = size.width;
     final double h = size.height;
     final Offset center = Offset(w / 2, h / 2);
 
-    // Colors (match reference style)
     const Color strokeBrown = Color(0xFF6E5338);
     const Color potFill = Color(0xFFD6C9B5);
     const Color potBand = Color(0xFFC8B8A0);
@@ -514,7 +112,6 @@ class _FlowerItemPainter extends CustomPainter {
     const Color petalMid = Color(0xFFF2A5B5);
     const Color flowerCore = Color(0xFFF3DB6A);
 
-    // Pot
     final double potW = w * 0.58;
     final double potH = h * 0.34;
     final Rect potRect = Rect.fromCenter(
@@ -538,7 +135,6 @@ class _FlowerItemPainter extends CustomPainter {
         ..strokeWidth = 2.0,
     );
 
-    // Pot rim (slight lip)
     final Rect rimRect = Rect.fromCenter(
       center: Offset(potRect.center.dx, potRect.top - potRect.height * 0.12),
       width: potW * 1.05,
@@ -557,7 +153,6 @@ class _FlowerItemPainter extends CustomPainter {
         ..strokeWidth = 2.0,
     );
 
-    // Pot decorative band
     final double bandY = potRect.center.dy;
     final RRect band = RRect.fromRectAndRadius(
       Rect.fromCenter(
@@ -569,7 +164,6 @@ class _FlowerItemPainter extends CustomPainter {
     );
     canvas.drawRRect(band, Paint()..color = potBand);
 
-    // Stem
     final Path stem = Path()
       ..moveTo(center.dx, rimRect.top + 6)
       ..cubicTo(center.dx, h * 0.46, center.dx, h * 0.46, center.dx, h * 0.44);
@@ -582,7 +176,6 @@ class _FlowerItemPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round,
     );
 
-    // Leaves (two symmetrical)
     Path leafPath(Offset c, bool left) {
       final double dir = left ? -1 : 1;
       final Path p = Path()
@@ -616,7 +209,6 @@ class _FlowerItemPainter extends CustomPainter {
       leafPath(Offset(leafCenter.dx + 10, leafCenter.dy), false),
       Paint()..color = leafLight,
     );
-    // Outline leaves
     canvas.drawPath(
       leafPath(Offset(leafCenter.dx - 10, leafCenter.dy), true),
       Paint()
@@ -632,7 +224,6 @@ class _FlowerItemPainter extends CustomPainter {
         ..strokeWidth = 1.6,
     );
 
-    // Flower petals (5-point rounded flower)
     final double petalR = w * 0.13;
     for (int i = 0; i < 5; i++) {
       final double a = (-90 + i * 72) * math.pi / 180.0;
@@ -655,7 +246,6 @@ class _FlowerItemPainter extends CustomPainter {
       );
     }
 
-    // Flower center
     final Rect core = Rect.fromCircle(
       center: Offset(center.dx, h * 0.34),
       radius: w * 0.09,
@@ -675,14 +265,13 @@ class _FlowerItemPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _ButterflyItemPainter extends CustomPainter {
+class ItemButterflyPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final double w = size.width;
     final double h = size.height;
     final Offset c = Offset(w / 2, h * 0.50);
 
-    // Colors
     const Color strokeBrown = Color(0xFF6E5338);
     const Color wingLight = Color(0xFFD1EAFE);
     const Color wingMid = Color(0xFFAED6FB);
@@ -708,7 +297,6 @@ class _ButterflyItemPainter extends CustomPainter {
       Radius.circular(s.shortestSide * 0.6),
     );
 
-    // Left upper wing
     final RRect lu = wingOval(Offset(c.dx - wingOX, c.dy - wingOY), upperWing);
     canvas.drawRRect(lu, wingFill(lu.outerRect));
     canvas.drawRRect(
@@ -719,7 +307,6 @@ class _ButterflyItemPainter extends CustomPainter {
         ..strokeWidth = 2.2,
     );
 
-    // Left lower wing
     final RRect ll = wingOval(
       Offset(c.dx - wingOX + w * 0.04, c.dy + wingOY),
       lowerWing,
@@ -733,7 +320,6 @@ class _ButterflyItemPainter extends CustomPainter {
         ..strokeWidth = 2.2,
     );
 
-    // Right upper wing
     final RRect ru = wingOval(Offset(c.dx + wingOX, c.dy - wingOY), upperWing);
     canvas.drawRRect(ru, wingFill(ru.outerRect));
     canvas.drawRRect(
@@ -744,7 +330,6 @@ class _ButterflyItemPainter extends CustomPainter {
         ..strokeWidth = 2.2,
     );
 
-    // Right lower wing
     final RRect rl = wingOval(
       Offset(c.dx + wingOX - w * 0.04, c.dy + wingOY),
       lowerWing,
@@ -758,7 +343,6 @@ class _ButterflyItemPainter extends CustomPainter {
         ..strokeWidth = 2.2,
     );
 
-    // Body (thorax + abdomen)
     final Rect bodyRect = Rect.fromCenter(
       center: c,
       width: w * 0.08,
@@ -769,14 +353,12 @@ class _ButterflyItemPainter extends CustomPainter {
       Radius.circular(w * 0.04),
     );
     canvas.drawRRect(body, Paint()..color = bodyDark);
-    // Head
     canvas.drawCircle(
       Offset(c.dx, bodyRect.top - h * 0.02),
       w * 0.04,
       Paint()..color = bodyDark,
     );
 
-    // Antennae
     final Paint ant = Paint()
       ..color = strokeBrown
       ..style = PaintingStyle.stroke
@@ -805,12 +387,10 @@ class _ButterflyItemPainter extends CustomPainter {
     canvas.drawPath(al, ant);
     canvas.drawPath(ar, ant);
 
-    // Wing spots (simple circles/ovals)
     void spotCircle(Offset o, double r) {
       canvas.drawCircle(o, r, Paint()..color = spot.withOpacity(0.95));
     }
 
-    // Left spots
     spotCircle(
       Offset(lu.center.dx - w * 0.06, lu.center.dy - h * 0.02),
       w * 0.018,
@@ -827,8 +407,6 @@ class _ButterflyItemPainter extends CustomPainter {
       Offset(ll.center.dx + w * 0.02, ll.center.dy + h * 0.03),
       w * 0.012,
     );
-
-    // Right spots (mirrored)
     spotCircle(
       Offset(ru.center.dx + w * 0.06, ru.center.dy - h * 0.02),
       w * 0.018,
@@ -851,20 +429,19 @@ class _ButterflyItemPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _BowItemPainter extends CustomPainter {
+class ItemBowPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final double w = size.width;
     final double h = size.height;
     final Offset c = Offset(w / 2, h * 0.52);
 
-    // Colors
     const Color strokeBrown = Color(0xFF6E5338);
     const Color bowLight = Color(0xFFF1A29A);
     const Color bowMid = Color(0xFFE07D73);
     const Color bowDark = Color(0xFFCC6B60);
 
-    Paint fillFor(Path path, {Alignment center = Alignment.center}) {
+    Paint fillFor(Path path) {
       final Rect r = path.getBounds();
       return Paint()
         ..shader = LinearGradient(
@@ -875,7 +452,6 @@ class _BowItemPainter extends CustomPainter {
         ).createShader(r);
     }
 
-    // Knot
     final RRect knot = RRect.fromRectAndRadius(
       Rect.fromCenter(
         center: c.translate(0, -h * 0.02),
@@ -885,7 +461,6 @@ class _BowItemPainter extends CustomPainter {
       Radius.circular(w * 0.06),
     );
 
-    // Left loop
     final Path left = Path()
       ..moveTo(c.dx - w * 0.10, c.dy - h * 0.08)
       ..cubicTo(
@@ -904,7 +479,6 @@ class _BowItemPainter extends CustomPainter {
       )
       ..close();
 
-    // Right loop
     final Path right = Path()
       ..moveTo(c.dx + w * 0.10, c.dy - h * 0.08)
       ..cubicTo(
@@ -923,7 +497,6 @@ class _BowItemPainter extends CustomPainter {
       )
       ..close();
 
-    // Tails
     Path tail(Offset start, bool leftSide) {
       final double dir = leftSide ? -1 : 1;
       return Path()
@@ -942,7 +515,6 @@ class _BowItemPainter extends CustomPainter {
     final Path leftTail = tail(c.translate(-w * 0.06, h * 0.06), true);
     final Path rightTail = tail(c.translate(w * 0.06, h * 0.06), false);
 
-    // Paint shapes
     for (final Path p in [left, right, leftTail, rightTail]) {
       canvas.drawPath(p, fillFor(p));
       canvas.drawPath(
@@ -969,7 +541,6 @@ class _BowItemPainter extends CustomPainter {
         ..strokeWidth = 2.2,
     );
 
-    // Highlights on loops
     Paint hi = Paint()..color = Colors.white.withOpacity(0.28);
     canvas.drawOval(
       Rect.fromCenter(
@@ -989,38 +560,6 @@ class _BowItemPainter extends CustomPainter {
     );
   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// Public wrappers to reuse item drawings in other files (e.g., award dialog)
-class StarItemPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) =>
-      _StarItemPainter().paint(canvas, size);
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class FlowerItemPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) =>
-      _FlowerItemPainter().paint(canvas, size);
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class ButterflyItemPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) =>
-      _ButterflyItemPainter().paint(canvas, size);
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class BowItemPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) => _BowItemPainter().paint(canvas, size);
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

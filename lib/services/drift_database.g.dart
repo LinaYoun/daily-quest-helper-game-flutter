@@ -1639,6 +1639,242 @@ class StreakStatesCompanion extends UpdateCompanion<StreakState> {
   }
 }
 
+class $OwnedItemsTable extends OwnedItems
+    with TableInfo<$OwnedItemsTable, OwnedItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OwnedItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _countMeta = const VerificationMeta('count');
+  @override
+  late final GeneratedColumn<int> count = GeneratedColumn<int>(
+    'count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, key, count];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'owned_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OwnedItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('count')) {
+      context.handle(
+        _countMeta,
+        count.isAcceptableOrUnknown(data['count']!, _countMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  OwnedItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OwnedItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      count: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}count'],
+      )!,
+    );
+  }
+
+  @override
+  $OwnedItemsTable createAlias(String alias) {
+    return $OwnedItemsTable(attachedDatabase, alias);
+  }
+}
+
+class OwnedItem extends DataClass implements Insertable<OwnedItem> {
+  final int id;
+  final String key;
+  final int count;
+  const OwnedItem({required this.id, required this.key, required this.count});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['key'] = Variable<String>(key);
+    map['count'] = Variable<int>(count);
+    return map;
+  }
+
+  OwnedItemsCompanion toCompanion(bool nullToAbsent) {
+    return OwnedItemsCompanion(
+      id: Value(id),
+      key: Value(key),
+      count: Value(count),
+    );
+  }
+
+  factory OwnedItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OwnedItem(
+      id: serializer.fromJson<int>(json['id']),
+      key: serializer.fromJson<String>(json['key']),
+      count: serializer.fromJson<int>(json['count']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'key': serializer.toJson<String>(key),
+      'count': serializer.toJson<int>(count),
+    };
+  }
+
+  OwnedItem copyWith({int? id, String? key, int? count}) => OwnedItem(
+    id: id ?? this.id,
+    key: key ?? this.key,
+    count: count ?? this.count,
+  );
+  OwnedItem copyWithCompanion(OwnedItemsCompanion data) {
+    return OwnedItem(
+      id: data.id.present ? data.id.value : this.id,
+      key: data.key.present ? data.key.value : this.key,
+      count: data.count.present ? data.count.value : this.count,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OwnedItem(')
+          ..write('id: $id, ')
+          ..write('key: $key, ')
+          ..write('count: $count')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, key, count);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OwnedItem &&
+          other.id == this.id &&
+          other.key == this.key &&
+          other.count == this.count);
+}
+
+class OwnedItemsCompanion extends UpdateCompanion<OwnedItem> {
+  final Value<int> id;
+  final Value<String> key;
+  final Value<int> count;
+  const OwnedItemsCompanion({
+    this.id = const Value.absent(),
+    this.key = const Value.absent(),
+    this.count = const Value.absent(),
+  });
+  OwnedItemsCompanion.insert({
+    this.id = const Value.absent(),
+    required String key,
+    this.count = const Value.absent(),
+  }) : key = Value(key);
+  static Insertable<OwnedItem> custom({
+    Expression<int>? id,
+    Expression<String>? key,
+    Expression<int>? count,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (key != null) 'key': key,
+      if (count != null) 'count': count,
+    });
+  }
+
+  OwnedItemsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? key,
+    Value<int>? count,
+  }) {
+    return OwnedItemsCompanion(
+      id: id ?? this.id,
+      key: key ?? this.key,
+      count: count ?? this.count,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (count.present) {
+      map['count'] = Variable<int>(count.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OwnedItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('key: $key, ')
+          ..write('count: $count')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1646,6 +1882,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WeeklyQuestsTable weeklyQuests = $WeeklyQuestsTable(this);
   late final $StreakQuestsTable streakQuests = $StreakQuestsTable(this);
   late final $StreakStatesTable streakStates = $StreakStatesTable(this);
+  late final $OwnedItemsTable ownedItems = $OwnedItemsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1655,6 +1892,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     weeklyQuests,
     streakQuests,
     streakStates,
+    ownedItems,
   ];
 }
 
@@ -2529,6 +2767,151 @@ typedef $$StreakStatesTableProcessedTableManager =
       StreakState,
       PrefetchHooks Function()
     >;
+typedef $$OwnedItemsTableCreateCompanionBuilder =
+    OwnedItemsCompanion Function({
+      Value<int> id,
+      required String key,
+      Value<int> count,
+    });
+typedef $$OwnedItemsTableUpdateCompanionBuilder =
+    OwnedItemsCompanion Function({
+      Value<int> id,
+      Value<String> key,
+      Value<int> count,
+    });
+
+class $$OwnedItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $OwnedItemsTable> {
+  $$OwnedItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OwnedItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OwnedItemsTable> {
+  $$OwnedItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OwnedItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OwnedItemsTable> {
+  $$OwnedItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<int> get count =>
+      $composableBuilder(column: $table.count, builder: (column) => column);
+}
+
+class $$OwnedItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OwnedItemsTable,
+          OwnedItem,
+          $$OwnedItemsTableFilterComposer,
+          $$OwnedItemsTableOrderingComposer,
+          $$OwnedItemsTableAnnotationComposer,
+          $$OwnedItemsTableCreateCompanionBuilder,
+          $$OwnedItemsTableUpdateCompanionBuilder,
+          (
+            OwnedItem,
+            BaseReferences<_$AppDatabase, $OwnedItemsTable, OwnedItem>,
+          ),
+          OwnedItem,
+          PrefetchHooks Function()
+        > {
+  $$OwnedItemsTableTableManager(_$AppDatabase db, $OwnedItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OwnedItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OwnedItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OwnedItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> key = const Value.absent(),
+                Value<int> count = const Value.absent(),
+              }) => OwnedItemsCompanion(id: id, key: key, count: count),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String key,
+                Value<int> count = const Value.absent(),
+              }) => OwnedItemsCompanion.insert(id: id, key: key, count: count),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OwnedItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OwnedItemsTable,
+      OwnedItem,
+      $$OwnedItemsTableFilterComposer,
+      $$OwnedItemsTableOrderingComposer,
+      $$OwnedItemsTableAnnotationComposer,
+      $$OwnedItemsTableCreateCompanionBuilder,
+      $$OwnedItemsTableUpdateCompanionBuilder,
+      (OwnedItem, BaseReferences<_$AppDatabase, $OwnedItemsTable, OwnedItem>),
+      OwnedItem,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2541,4 +2924,6 @@ class $AppDatabaseManager {
       $$StreakQuestsTableTableManager(_db, _db.streakQuests);
   $$StreakStatesTableTableManager get streakStates =>
       $$StreakStatesTableTableManager(_db, _db.streakStates);
+  $$OwnedItemsTableTableManager get ownedItems =>
+      $$OwnedItemsTableTableManager(_db, _db.ownedItems);
 }

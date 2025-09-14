@@ -32,7 +32,29 @@ class _WeeklyHomeScreenState extends State<WeeklyHomeScreen> {
     _isLoading.value = false;
   }
 
-  void _handleClaimReward() => _activeReward.value = null;
+  void _handleClaimReward() async {
+    final (int itemId, String key) = await DatabaseService()
+        .addRandomOwnedItem();
+    _activeReward.value = null;
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.35),
+      builder: (_) => Stack(
+        children: <Widget>[
+          ItemAwardDialog(
+            itemId: itemId,
+            itemKey: key,
+            onClose: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pop('refresh');
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _openRegister() async {
     final result = await Navigator.of(context).push<Map<String, dynamic>>(

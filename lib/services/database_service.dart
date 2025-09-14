@@ -238,4 +238,42 @@ class DatabaseService {
     }
     return 1;
   }
+
+  // Owned items API
+  // itemId: 1 star, 2 flower, 3 butterfly, 4 bow
+  Future<Map<int, int>> getOwnedItemCounts() async {
+    final items = await _db.getAllOwnedItems();
+    final Map<int, int> result = {1: 0, 2: 0, 3: 0, 4: 0};
+    for (final it in items) {
+      result[it.id] = it.count;
+    }
+    return result;
+  }
+
+  Future<(int, String)> addRandomOwnedItem() async {
+    final int itemId = (DateTime.now().millisecondsSinceEpoch % 4) + 1;
+    String key = 'star';
+    if (itemId == 2) key = 'flower';
+    if (itemId == 3) key = 'butterfly';
+    if (itemId == 4) key = 'bow';
+    await _db.upsertOwnedItem(
+      OwnedItemsCompanion(
+        id: drift.Value(itemId),
+        key: drift.Value(key),
+        count: drift.Value.absent(),
+      ),
+    );
+    // Read current then increment
+    final items = await _db.getAllOwnedItems();
+    final existing = items.where((e) => e.id == itemId).toList();
+    final int current = existing.isEmpty ? 0 : existing.first.count;
+    await _db.upsertOwnedItem(
+      OwnedItemsCompanion(
+        id: drift.Value(itemId),
+        key: drift.Value(key),
+        count: drift.Value(current + 1),
+      ),
+    );
+    return (itemId, key);
+  }
 }
