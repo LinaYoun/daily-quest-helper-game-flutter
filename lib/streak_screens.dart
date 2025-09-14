@@ -37,6 +37,14 @@ class _StreakHomeScreenState extends State<StreakHomeScreen> {
     final (int streakDays, String? lastResetYmd, String? lastCompletionYmd) =
         await _db.getStreakState();
     if (lastResetYmd != today) {
+      // Determine if yesterday ended with ALL streak quests completed
+      final bool hasQuests = items.isNotEmpty;
+      final bool allCompletedYesterday =
+          hasQuests && items.every((q) => q.status == QuestStatus.completed);
+
+      // If any day fails to complete all quests, reset streak to Day 0
+      final int nextStreakDays = allCompletedYesterday ? streakDays : 0;
+
       // Reset all streak quests' progress to 0 at new day
       for (final q in items) {
         if (q.progress != 0 || q.status == QuestStatus.completed) {
@@ -45,8 +53,9 @@ class _StreakHomeScreenState extends State<StreakHomeScreen> {
           );
         }
       }
+
       await _db.setStreakState(
-        streakDays: streakDays,
+        streakDays: nextStreakDays,
         lastResetYmd: today,
         lastCompletionYmd: lastCompletionYmd,
       );
@@ -174,7 +183,21 @@ class _StreakHomeScreenState extends State<StreakHomeScreen> {
                                             : q.status,
                                       );
                                       await _db.updateStreakQuest(updated);
-                                      // Update streak days counter when a streak quest is completed
+                                      // Update streak days counter ONLY when ALL streak quests
+                                      // are completed for the current day. Failure to complete all
+                                      // on a day is handled on next-day reset (sets Day 0).
+                                      final after = await _db
+                                          .getAllStreakQuests();
+                                      final bool hasQuestsToday =
+                                          after.isNotEmpty;
+                                      final bool allCompletedToday =
+                                          hasQuestsToday &&
+                                          after.every(
+                                            (e) =>
+                                                e.status ==
+                                                QuestStatus.completed,
+                                          );
+
                                       final now = DateTime.now();
                                       final String today =
                                           '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
@@ -184,16 +207,20 @@ class _StreakHomeScreenState extends State<StreakHomeScreen> {
                                         String? lastCompletionYmd,
                                       ) = await _db
                                           .getStreakState();
-                                      final bool isNewDay =
-                                          lastCompletionYmd != today;
-                                      final int nextStreak = isNewDay
-                                          ? (streakDays + 1)
-                                          : streakDays;
-                                      await _db.setStreakState(
-                                        streakDays: nextStreak,
-                                        lastResetYmd: lastResetYmd ?? today,
-                                        lastCompletionYmd: today,
-                                      );
+
+                                      if (allCompletedToday) {
+                                        // Increment only once per day when full completion is reached
+                                        final bool notCountedYet =
+                                            lastCompletionYmd != today;
+                                        final int nextStreak = notCountedYet
+                                            ? (streakDays + 1)
+                                            : streakDays;
+                                        await _db.setStreakState(
+                                          streakDays: nextStreak,
+                                          lastResetYmd: lastResetYmd ?? today,
+                                          lastCompletionYmd: today,
+                                        );
+                                      }
                                       await DatabaseService()
                                           .awardBadgeStreak1IfNeeded();
                                       if (mounted) {

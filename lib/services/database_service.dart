@@ -112,6 +112,33 @@ class DatabaseService {
     return 1;
   }
 
+  // Weekly auto-reset if week changed
+  Future<void> resetWeeklyIfNeeded() async {
+    final String? last = await _db.getAppState('lastWeeklyReset');
+    final DateTime now = DateTime.now();
+    // Monday start of current week
+    final DateTime monday = now.subtract(Duration(days: (now.weekday - 1) % 7));
+    final DateTime keyDate = DateTime(monday.year, monday.month, monday.day);
+    final String currentKey =
+        '${keyDate.year.toString().padLeft(4, '0')}-${keyDate.month.toString().padLeft(2, '0')}-${keyDate.day.toString().padLeft(2, '0')}';
+    if (last == currentKey) return;
+    final weekly = await getAllWeeklyQuests();
+    for (final q in weekly) {
+      await _db.upsertWeeklyQuest(
+        WeeklyQuestsCompanion(
+          id: drift.Value(q.id),
+          title: drift.Value(q.title),
+          progress: const drift.Value(0),
+          target: drift.Value(q.target),
+          status: drift.Value('incomplete'),
+          iconUrl: drift.Value(q.iconUrl),
+          rewardUrl: drift.Value(q.rewardUrl),
+        ),
+      );
+    }
+    await _db.setAppState('lastWeeklyReset', currentKey);
+  }
+
   // Streak CRUD
   Future<int> insertStreakQuest(domain.Quest quest) async {
     await _db.upsertStreakQuest(

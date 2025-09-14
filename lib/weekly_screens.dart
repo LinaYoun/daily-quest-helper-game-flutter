@@ -28,6 +28,7 @@ class _WeeklyHomeScreenState extends State<WeeklyHomeScreen> {
   }
 
   Future<void> _load() async {
+    await _db.resetWeeklyIfNeeded();
     final items = await _db.getAllWeeklyQuests();
     _quests.value = items;
     _isLoading.value = false;

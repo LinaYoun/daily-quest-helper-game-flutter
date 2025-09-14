@@ -74,6 +74,14 @@ class Badges extends Table {
   Set<Column<Object>>? get primaryKey => {id};
 }
 
+class AppStates extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text().nullable()();
+
+  @override
+  Set<Column<Object>>? get primaryKey => {key};
+}
+
 @DriftDatabase(
   tables: [
     Quests,
@@ -82,13 +90,14 @@ class Badges extends Table {
     StreakStates,
     OwnedItems,
     Badges,
+    AppStates,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -110,6 +119,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 6) {
         await m.createTable(badges);
+      }
+      if (from < 7) {
+        await m.createTable(appStates);
       }
     },
   );
@@ -154,6 +166,18 @@ class AppDatabase extends _$AppDatabase {
   Future<List<Badge>> getAllBadges() async => select(badges).get();
   Future<void> upsertBadge(BadgesCompanion data) async {
     await into(badges).insertOnConflictUpdate(data);
+  }
+
+  // App state helpers
+  Future<String?> getAppState(String k) async {
+    final rows = await (select(appStates)..where((t) => t.key.equals(k))).get();
+    return rows.isEmpty ? null : rows.first.value;
+  }
+
+  Future<void> setAppState(String k, String? v) async {
+    await into(appStates).insertOnConflictUpdate(
+      AppStatesCompanion(key: Value(k), value: Value(v)),
+    );
   }
 
   Future<void> deleteQuestById(int questId) async {
