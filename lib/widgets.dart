@@ -1811,35 +1811,48 @@ class _RegisterFormState extends State<_RegisterForm> {
             ),
           ),
           const SizedBox(height: 20),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorAccent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  '취소',
+                  style: TextStyle(
+                    color: colorText,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  elevation: 6,
                 ),
-                elevation: 6,
+                onPressed: () {
+                  if (_formKey.currentState?.validate() ?? false) {
+                    final String title = _title.text.trim();
+                    final int target = int.parse(_target.text.trim());
+                    Navigator.of(
+                      context,
+                    ).pop(<String, dynamic>{'title': title, 'target': target});
+                  }
+                },
+                child: const Text(
+                  '등록',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
               ),
-              onPressed: () {
-                if (_formKey.currentState?.validate() ?? false) {
-                  final String title = _title.text.trim();
-                  final int target = int.parse(_target.text.trim());
-                  Navigator.of(
-                    context,
-                  ).pop(<String, dynamic>{'title': title, 'target': target});
-                }
-              },
-              child: const Text(
-                '등록',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-              ),
-            ),
+            ],
           ),
         ],
       ),
