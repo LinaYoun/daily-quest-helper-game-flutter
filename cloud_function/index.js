@@ -16,8 +16,9 @@ functions.http("generateIcon", async (req, res) => {
 
   try {
     const { prompt, referenceDataUrl } = req.body || {};
-    if (!prompt) return res.status(400).json({ error: "Missing prompt" });
 
+    // Single image generation (original behavior)
+    if (!prompt) return res.status(400).json({ error: "Missing prompt" });
     const parts = [];
     if (referenceDataUrl && typeof referenceDataUrl === "string") {
       const base64 = referenceDataUrl.split(",").pop();
@@ -26,9 +27,7 @@ functions.http("generateIcon", async (req, res) => {
     parts.push({ text: prompt });
 
     const contents = [{ role: "user", parts }];
-    const modelsToTry = [
-      "gemini-2.5-flash-image-preview"
-    ];
+    const modelsToTry = ["gemini-2.5-flash-image-preview"];
 
     let lastError;
     for (const model of modelsToTry) {
@@ -43,13 +42,11 @@ functions.http("generateIcon", async (req, res) => {
           if (part.inlineData) {
             return res.json({
               dataUrl: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`,
-              modelUsed: model,
             });
           }
         }
       } catch (err) {
         lastError = err;
-        // continue to next model
       }
     }
     console.error("All models failed", lastError);
@@ -60,4 +57,20 @@ functions.http("generateIcon", async (req, res) => {
   }
 });
 
+// Helper to generate one image from prompt (+optional reference inline data)
+async function generateImage({ model, parts }) {
+  const response = await genAI.models.generateContent({
+    model,
+    contents: [{ role: "user", parts }],
+    config: { responseModalities: [Modality.IMAGE, Modality.TEXT] },
+  });
+  const cand = response?.candidates?.[0]?.content?.parts ?? [];
+  for (const part of cand) {
+    if (part.inlineData) {
+      return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+    }
+  }
+  return null;
+}
 
+// Deprecated combined endpoint removed: reward icons are drawn in Flutter.

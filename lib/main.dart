@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'constants.dart';
-import 'home_screen.dart';
+import 'main_hub_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const DailyQuestApp());
 }
 
@@ -24,7 +25,7 @@ class DailyQuestApp extends StatelessWidget {
         ),
         textTheme: const TextTheme(bodyMedium: TextStyle(color: colorText)),
       ),
-      home: const HomeScreen(),
+      home: const MainHubScreen(),
     );
   }
 }

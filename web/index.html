@@ -33,6 +33,22 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <!-- Load sql.js for Drift WebDatabase. Must be available before Flutter starts. -->
+  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.2/dist/sql-wasm.js"></script>
+  <script>
+    (function(){
+      var cdn = 'https://cdn.jsdelivr.net/npm/sql.js@1.10.2/dist/';
+      if (window.initSqlJs && !window.__sqljsLocateFileSet) {
+        var original = window.initSqlJs;
+        window.initSqlJs = function(cfg){
+          cfg = cfg || {};
+          if (!cfg.locateFile) cfg.locateFile = function(file){ return cdn + file; };
+          return original(cfg);
+        };
+        window.__sqljsLocateFileSet = true;
+      }
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

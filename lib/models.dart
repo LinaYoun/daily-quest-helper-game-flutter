@@ -47,6 +47,33 @@ class Quest {
       rewardUrl: rewardUrl ?? this.rewardUrl,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'progress': progress,
+      'target': target,
+      'status': status == QuestStatus.completed ? 'completed' : 'incomplete',
+      'iconUrl': iconUrl,
+      'rewardUrl': rewardUrl,
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+  }
+
+  factory Quest.fromJson(Map<String, dynamic> json) {
+    return Quest(
+      id: json['id'] as int,
+      title: json['title'] as String,
+      progress: json['progress'] as int,
+      target: json['target'] as int,
+      status: json['status'] == 'completed'
+          ? QuestStatus.completed
+          : QuestStatus.incomplete,
+      iconUrl: json['iconUrl'] as String?,
+      rewardUrl: json['rewardUrl'] as String?,
+    );
+  }
 }
 
 @immutable
@@ -55,4 +82,3 @@ class RewardInfo {
   final String questName;
   final String imageUrl;
 }
-

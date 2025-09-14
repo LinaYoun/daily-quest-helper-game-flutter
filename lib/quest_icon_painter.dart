@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class QuestIconPainter extends CustomPainter {
@@ -7,488 +6,126 @@ class QuestIconPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final t = title.toLowerCase();
-
-    if (t.contains('설거지') || t.contains('dish')) {
-      _drawDishesIcon(canvas, size);
-    } else if (t.contains('영어') ||
-        t.contains('english') ||
-        t.contains('meetup')) {
-      _drawChatIcon(canvas, size);
-    } else if (t.contains('주문') || t.contains('order')) {
-      _drawDeliveryIcon(canvas, size);
-    } else if (t.contains('문') || t.contains('door') || t.contains('repair')) {
-      _drawHammerIcon(canvas, size);
-    } else if (t.contains('물') || t.contains('plant') || t.contains('water')) {
-      _drawWateringIcon(canvas, size);
-    } else if (t.contains('book')) {
-      _drawBookIcon(canvas, size);
-    } else {
-      _drawDefaultIcon(canvas, size);
-    }
+    // Always draw scroll icon for all quests
+    _drawScrollIcon(canvas, size);
   }
 
-  void _drawDishesIcon(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final plateRadius = size.width * 0.3;
-
-    // Stack of plates
-    for (int i = 0; i < 5; i++) {
-      final offset = Offset(center.dx, center.dy - i * 4);
-      final paint = Paint()
-        ..color = const Color(0xFFE8F4FD)
-        ..style = PaintingStyle.fill;
-
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: offset,
-          width: plateRadius * 2,
-          height: plateRadius * 0.4,
-        ),
-        paint,
-      );
-
-      // Plate rim
-      final rimPaint = Paint()
-        ..color = const Color(0xFF2B5F87)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
-
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: offset,
-          width: plateRadius * 2,
-          height: plateRadius * 0.4,
-        ),
-        rimPaint,
-      );
-    }
-
-    // Sparkles
-    _drawSparkle(canvas, Offset(center.dx - 15, center.dy - 20), 5);
-    _drawSparkle(canvas, Offset(center.dx + 18, center.dy - 15), 4);
-
-    // Bubbles
-    final bubblePaint = Paint()
-      ..color = const Color(0xFF87CEEB).withOpacity(0.6)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(Offset(center.dx - 10, center.dy + 15), 5, bubblePaint);
-    canvas.drawCircle(Offset(center.dx + 8, center.dy + 18), 3, bubblePaint);
-  }
-
-  void _drawChatIcon(Canvas canvas, Size size) {
+  void _drawScrollIcon(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
 
-    // First bubble - "Hi"
-    final bubble1Rect = Rect.fromCenter(
-      center: Offset(center.dx - 10, center.dy - 5),
-      width: size.width * 0.35,
-      height: size.height * 0.25,
+    // Colors for scroll
+    const Color scrollBase = Color(0xFFE8D5A6);
+    const Color scrollDark = Color(0xFFD4A76A);
+    const Color scrollDarker = Color(0xFFB8935F);
+    const Color textLines = Color(0xFF8B6F47);
+
+    // Main scroll body
+    final double scrollWidth = size.width * 0.7;
+    final double scrollHeight = size.height * 0.8;
+    final double cornerRadius = size.width * 0.15;
+
+    // Draw main scroll rectangle with rounded corners
+    final scrollRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: center, width: scrollWidth, height: scrollHeight),
+      Radius.circular(cornerRadius),
     );
-    _drawChatBubble(canvas, bubble1Rect, const Color(0xFFFFE4B5), 'Hi');
 
-    // Second bubble - "안녕"
-    final bubble2Rect = Rect.fromCenter(
-      center: Offset(center.dx + 10, center.dy + 5),
-      width: size.width * 0.35,
-      height: size.height * 0.25,
+    canvas.drawRRect(scrollRect, Paint()..color = scrollBase);
+
+    // Draw top rolled part
+    final double rollRadius = size.width * 0.12;
+    final double rollY = center.dy - scrollHeight / 2 + rollRadius / 2;
+
+    // Left roll
+    canvas.drawCircle(
+      Offset(center.dx - scrollWidth / 2 + rollRadius, rollY),
+      rollRadius,
+      Paint()..color = scrollDark,
     );
-    _drawChatBubble(canvas, bubble2Rect, const Color(0xFFFFB6C1), '안녕');
-  }
 
-  void _drawChatBubble(Canvas canvas, Rect rect, Color color, String text) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
+    // Right roll
+    canvas.drawCircle(
+      Offset(center.dx + scrollWidth / 2 - rollRadius, rollY),
+      rollRadius,
+      Paint()..color = scrollDark,
+    );
 
-    final rRect = RRect.fromRectAndRadius(rect, const Radius.circular(8));
-    canvas.drawRRect(rRect, paint);
+    // Bottom rolled part
+    final double bottomRollY = center.dy + scrollHeight / 2 - rollRadius / 2;
 
-    // Border
-    final borderPaint = Paint()
-      ..color = color.withOpacity(0.8)
+    // Left bottom roll
+    canvas.drawCircle(
+      Offset(center.dx - scrollWidth / 2 + rollRadius, bottomRollY),
+      rollRadius,
+      Paint()..color = scrollDark,
+    );
+
+    // Right bottom roll
+    canvas.drawCircle(
+      Offset(center.dx + scrollWidth / 2 - rollRadius, bottomRollY),
+      rollRadius,
+      Paint()..color = scrollDark,
+    );
+
+    // Inner shadows for depth
+    final innerPaint = Paint()
+      ..color = scrollDarker.withOpacity(0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
-    canvas.drawRRect(rRect, borderPaint);
 
-    // Text
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: TextStyle(
-          color: Colors.black87,
-          fontSize: rect.height * 0.4,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    textPainter.paint(
-      canvas,
-      Offset(
-        rect.center.dx - textPainter.width / 2,
-        rect.center.dy - textPainter.height / 2,
-      ),
-    );
-  }
-
-  void _drawDeliveryIcon(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-
-    // Box
-    final boxRect = Rect.fromCenter(
-      center: center,
-      width: size.width * 0.5,
-      height: size.height * 0.4,
+    // Left inner shadow
+    canvas.drawLine(
+      Offset(center.dx - scrollWidth / 2 + rollRadius * 1.5, rollY),
+      Offset(center.dx - scrollWidth / 2 + rollRadius * 1.5, bottomRollY),
+      innerPaint,
     );
 
-    final boxPaint = Paint()
-      ..color = const Color(0xFFD2691E)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(boxRect, const Radius.circular(4)),
-      boxPaint,
+    // Right inner shadow
+    canvas.drawLine(
+      Offset(center.dx + scrollWidth / 2 - rollRadius * 1.5, rollY),
+      Offset(center.dx + scrollWidth / 2 - rollRadius * 1.5, bottomRollY),
+      innerPaint,
     );
 
-    // Box tape
-    final tapePaint = Paint()
-      ..color = const Color(0xFFFFD700)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRect(
-      Rect.fromCenter(center: center, width: size.width * 0.5, height: 4),
-      tapePaint,
-    );
-
-    // Checkmark
-    final checkPaint = Paint()
-      ..color = const Color(0xFF32CD32)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path()
-      ..moveTo(center.dx - 8, center.dy - 5)
-      ..lineTo(center.dx - 2, center.dy + 2)
-      ..lineTo(center.dx + 10, center.dy - 10);
-
-    canvas.drawPath(path, checkPaint);
-  }
-
-  void _drawHammerIcon(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-
-    // Wood planks
-    final plankPaint = Paint()
-      ..color = const Color(0xFFDEB887)
-      ..style = PaintingStyle.fill;
-
-    // Draw 3 planks
-    for (int i = 0; i < 3; i++) {
-      final plankRect = Rect.fromCenter(
-        center: Offset(center.dx - 10 + i * 10, center.dy + 10),
-        width: size.width * 0.15,
-        height: size.height * 0.35,
-      );
-
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(plankRect, const Radius.circular(2)),
-        plankPaint,
-      );
-
-      // Wood grain
-      final grainPaint = Paint()
-        ..color = const Color(0xFFCD853F)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1;
-
-      canvas.drawLine(
-        Offset(plankRect.left + 2, plankRect.top + 5),
-        Offset(plankRect.left + 2, plankRect.bottom - 5),
-        grainPaint,
-      );
-    }
-
-    // Hammer
-    final hammerHandle = Paint()
-      ..color = const Color(0xFF8B4513)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(center.dx + 5, center.dy - 5),
-          width: 4,
-          height: size.height * 0.3,
-        ),
-        const Radius.circular(2),
-      ),
-      hammerHandle,
-    );
-
-    // Hammer head
-    final hammerHead = Paint()
-      ..color = const Color(0xFF708090)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(center.dx + 5, center.dy - 15),
-          width: size.width * 0.25,
-          height: size.height * 0.15,
-        ),
-        const Radius.circular(3),
-      ),
-      hammerHead,
-    );
-
-    // Impact lines
-    _drawImpactLines(canvas, Offset(center.dx - 5, center.dy - 8));
-  }
-
-  void _drawWateringIcon(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-
-    // Watering can
-    final canPaint = Paint()
-      ..color = const Color(0xFF87CEEB)
-      ..style = PaintingStyle.fill;
-
-    // Can body
-    final canRect = Rect.fromCenter(
-      center: Offset(center.dx - 5, center.dy),
-      width: size.width * 0.3,
-      height: size.height * 0.25,
-    );
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(canRect, const Radius.circular(4)),
-      canPaint,
-    );
-
-    // Spout
-    final spoutPath = Path()
-      ..moveTo(canRect.right, canRect.top + 5)
-      ..lineTo(canRect.right + 12, canRect.top - 5)
-      ..lineTo(canRect.right + 12, canRect.top)
-      ..lineTo(canRect.right, canRect.top + 10);
-
-    canvas.drawPath(spoutPath, canPaint);
-
-    // Water drops
-    final waterPaint = Paint()
-      ..color = const Color(0xFF4169E1).withOpacity(0.7)
-      ..style = PaintingStyle.fill;
-
-    for (int i = 0; i < 3; i++) {
-      canvas.drawCircle(
-        Offset(canRect.right + 15, canRect.top + i * 5),
-        2,
-        waterPaint,
-      );
-    }
-
-    // Plant
-    final plantPot = Paint()
-      ..color = const Color(0xFFD2691E)
-      ..style = PaintingStyle.fill;
-
-    final potPath = Path()
-      ..moveTo(center.dx + 5, center.dy + 12)
-      ..lineTo(center.dx + 3, center.dy + 20)
-      ..lineTo(center.dx + 17, center.dy + 20)
-      ..lineTo(center.dx + 15, center.dy + 12)
-      ..close();
-
-    canvas.drawPath(potPath, plantPot);
-
-    // Sprout
-    final sproutPaint = Paint()
-      ..color = const Color(0xFF32CD32)
-      ..style = PaintingStyle.fill;
-
-    // Stem
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: Offset(center.dx + 10, center.dy + 8),
-        width: 2,
-        height: 8,
-      ),
-      sproutPaint,
-    );
-
-    // Leaves
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(center.dx + 7, center.dy + 5),
-        width: 6,
-        height: 8,
-      ),
-      sproutPaint,
-    );
-
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(center.dx + 13, center.dy + 5),
-        width: 6,
-        height: 8,
-      ),
-      sproutPaint,
-    );
-  }
-
-  void _drawBookIcon(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-
-    // Book cover
-    final bookPaint = Paint()
-      ..color = const Color(0xFFB22222)
-      ..style = PaintingStyle.fill;
-
-    final bookRect = Rect.fromCenter(
-      center: center,
-      width: size.width * 0.5,
-      height: size.height * 0.4,
-    );
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(bookRect, const Radius.circular(4)),
-      bookPaint,
-    );
-
-    // Book spine
-    final spinePaint = Paint()
-      ..color = const Color(0xFF8B0000)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRect(
-      Rect.fromLTWH(bookRect.left, bookRect.top, 4, bookRect.height),
-      spinePaint,
-    );
-
-    // Pages
-    final pagesPaint = Paint()
-      ..color = const Color(0xFFFFFACD)
-      ..style = PaintingStyle.fill;
-
-    final pagesRect = Rect.fromCenter(
-      center: Offset(center.dx + 2, center.dy),
-      width: size.width * 0.35,
-      height: size.height * 0.3,
-    );
-
-    canvas.drawRect(pagesRect, pagesPaint);
-
-    // Heart
-    _drawHeart(canvas, center, size.width * 0.15);
-  }
-
-  void _drawDefaultIcon(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-
-    // Checkmark circle
-    final circlePaint = Paint()
-      ..color = const Color(0xFF32CD32)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(center, size.width * 0.35, circlePaint);
-
-    // Check
-    final checkPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path()
-      ..moveTo(center.dx - 10, center.dy)
-      ..lineTo(center.dx - 3, center.dy + 8)
-      ..lineTo(center.dx + 10, center.dy - 8);
-
-    canvas.drawPath(path, checkPaint);
-  }
-
-  void _drawSparkle(Canvas canvas, Offset center, double size) {
-    final paint = Paint()
-      ..color = const Color(0xFFFFD700)
-      ..style = PaintingStyle.fill;
-
-    // Draw star shape
-    final path = Path()
-      ..moveTo(center.dx, center.dy - size)
-      ..lineTo(center.dx + size * 0.3, center.dy - size * 0.3)
-      ..lineTo(center.dx + size, center.dy)
-      ..lineTo(center.dx + size * 0.3, center.dy + size * 0.3)
-      ..lineTo(center.dx, center.dy + size)
-      ..lineTo(center.dx - size * 0.3, center.dy + size * 0.3)
-      ..lineTo(center.dx - size, center.dy)
-      ..lineTo(center.dx - size * 0.3, center.dy - size * 0.3)
-      ..close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  void _drawImpactLines(Canvas canvas, Offset center) {
-    final paint = Paint()
-      ..color = const Color(0xFFFFD700)
-      ..style = PaintingStyle.stroke
+    // Draw text lines
+    final linePaint = Paint()
+      ..color = textLines
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
 
-    for (int i = 0; i < 3; i++) {
-      final angle = (i - 1) * 0.3;
-      final dx = 8 * math.cos(angle);
-      final dy = 8 * math.sin(angle);
+    final double lineSpacing = scrollHeight / 8;
+    final double lineWidth = scrollWidth * 0.5;
+    final double startY = center.dy - scrollHeight / 2 + lineSpacing * 2;
 
-      canvas.drawLine(center, Offset(center.dx + dx, center.dy + dy), paint);
+    for (int i = 0; i < 4; i++) {
+      final double y = startY + i * lineSpacing;
+      final double currentLineWidth = lineWidth * (0.7 + (i % 2) * 0.3);
+
+      canvas.drawLine(
+        Offset(center.dx - currentLineWidth / 2, y),
+        Offset(center.dx + currentLineWidth / 2, y),
+        linePaint,
+      );
     }
-  }
 
-  void _drawHeart(Canvas canvas, Offset center, double size) {
-    final paint = Paint()
-      ..color = const Color(0xFFFF69B4)
+    // Add highlight on rolls
+    final highlightPaint = Paint()
+      ..color = Colors.white.withOpacity(0.4)
       ..style = PaintingStyle.fill;
 
-    final path = Path()
-      ..moveTo(center.dx, center.dy + size * 0.5)
-      ..cubicTo(
-        center.dx - size * 0.5,
-        center.dy,
-        center.dx - size * 0.5,
-        center.dy - size * 0.3,
-        center.dx - size * 0.2,
-        center.dy - size * 0.3,
-      )
-      ..cubicTo(
-        center.dx,
-        center.dy - size * 0.3,
-        center.dx,
-        center.dy - size * 0.1,
-        center.dx,
-        center.dy,
-      )
-      ..cubicTo(
-        center.dx,
-        center.dy - size * 0.1,
-        center.dx,
-        center.dy - size * 0.3,
-        center.dx + size * 0.2,
-        center.dy - size * 0.3,
-      )
-      ..cubicTo(
-        center.dx + size * 0.5,
-        center.dy - size * 0.3,
-        center.dx + size * 0.5,
-        center.dy,
-        center.dx,
-        center.dy + size * 0.5,
-      );
+    // Top left highlight
+    canvas.drawCircle(
+      Offset(center.dx - scrollWidth / 2 + rollRadius - 3, rollY - 3),
+      rollRadius * 0.3,
+      highlightPaint,
+    );
 
-    canvas.drawPath(path, paint);
+    // Top right highlight
+    canvas.drawCircle(
+      Offset(center.dx + scrollWidth / 2 - rollRadius - 3, rollY - 3),
+      rollRadius * 0.3,
+      highlightPaint,
+    );
   }
 
   @override
@@ -500,145 +137,164 @@ class QuestIconPainter extends CustomPainter {
 class RewardIconPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
+    final Offset center = Offset(size.width / 2, size.height / 2);
 
-    // Gift box
-    final boxRect = Rect.fromCenter(
-      center: Offset(center.dx, center.dy + 5),
-      width: size.width * 0.6,
-      height: size.height * 0.5,
+    // Colors matching the reference image
+    const Color white = Colors.white;
+    const Color boxGold = Color(0xFFE6C16B);
+    const Color boxGoldLight = Color(0xFFFFD700);
+    const Color boxGoldDark = Color(0xFFD4AF37);
+    const Color ribbonRed = Color(0xFFDC143C);
+
+    // 1) White rounded background
+    final RRect background = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(size.width * 0.22),
+    );
+    canvas.drawRRect(background, Paint()..color = white);
+
+    // 2) Main gift box body (front view, not isometric)
+    final double boxW = size.width * 0.62;
+    final double boxH = size.height * 0.52;
+    final Offset boxCenter = Offset(center.dx, center.dy + size.height * 0.08);
+
+    final Rect boxRect = Rect.fromCenter(
+      center: boxCenter,
+      width: boxW,
+      height: boxH,
     );
 
-    // Yellow and white stripes
-    final stripeWidth = boxRect.width / 6;
-    for (int i = 0; i < 6; i++) {
-      final stripePaint = Paint()
-        ..color = i % 2 == 0 ? const Color(0xFFFFD700) : Colors.white
-        ..style = PaintingStyle.fill;
+    // Draw main box with gradient
+    final Paint boxPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [boxGoldLight, boxGold, boxGoldDark],
+        stops: [0.0, 0.5, 1.0],
+      ).createShader(boxRect);
+    canvas.drawRect(boxRect, boxPaint);
 
-      canvas.drawRect(
-        Rect.fromLTWH(
-          boxRect.left + i * stripeWidth,
-          boxRect.top,
-          stripeWidth,
-          boxRect.height,
-        ),
-        stripePaint,
-      );
-    }
-
-    // Box border
-    final borderPaint = Paint()
-      ..color = const Color(0xFFD4A574)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(boxRect, const Radius.circular(4)),
-      borderPaint,
+    // Box outline
+    canvas.drawRect(
+      boxRect,
+      Paint()
+        ..color = boxGoldDark
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
     );
 
-    // Lid
-    final lidRect = Rect.fromCenter(
-      center: Offset(center.dx, boxRect.top - 5),
-      width: size.width * 0.65,
-      height: size.height * 0.15,
+    // Lid (box top)
+    final double lidH = boxH * 0.25;
+    final Rect lidRect = Rect.fromLTWH(
+      boxRect.left - size.width * 0.02,
+      boxRect.top - lidH * 0.3,
+      boxW + size.width * 0.04,
+      lidH,
     );
 
-    final lidPaint = Paint()
-      ..color = const Color(0xFFD4A574)
-      ..style = PaintingStyle.fill;
+    final Paint lidPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [boxGoldLight, boxGold],
+      ).createShader(lidRect);
+    canvas.drawRect(lidRect, lidPaint);
 
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(lidRect, const Radius.circular(4)),
-      lidPaint,
+    // Lid outline
+    canvas.drawRect(
+      lidRect,
+      Paint()
+        ..color = boxGoldDark
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
     );
-
-    // Keyhole
-    final keyholePaint = Paint()
-      ..color = const Color(0xFF8B7355)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(Offset(center.dx, lidRect.center.dy), 4, keyholePaint);
-
-    // Ribbon
-    final ribbonPaint = Paint()
-      ..color = const Color(0xFFDC143C)
-      ..style = PaintingStyle.fill;
 
     // Vertical ribbon
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: center,
-        width: size.width * 0.15,
-        height: size.height * 0.8,
-      ),
-      ribbonPaint,
+    final double ribbonW = boxW * 0.22;
+    final Rect verticalRibbon = Rect.fromCenter(
+      center: Offset(boxCenter.dx, boxCenter.dy),
+      width: ribbonW,
+      height: boxH + lidH * 0.5,
     );
+    canvas.drawRect(verticalRibbon, Paint()..color = ribbonRed);
 
-    // Bow
-    _drawBow(
-      canvas,
-      Offset(center.dx, center.dy - size.height * 0.35),
-      size.width * 0.3,
+    // Horizontal ribbon
+    final Rect horizontalRibbon = Rect.fromCenter(
+      center: Offset(boxCenter.dx, lidRect.center.dy),
+      width: boxW + size.width * 0.04,
+      height: ribbonW * 0.8,
     );
+    canvas.drawRect(horizontalRibbon, Paint()..color = ribbonRed);
 
-    // Glow effect
-    final glowPaint = Paint()
-      ..color = const Color(0xFFFFD700).withOpacity(0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 5);
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(boxRect.inflate(5), const Radius.circular(4)),
-      glowPaint,
+    // Bow on top
+    final Offset bowCenter = Offset(
+      boxCenter.dx,
+      lidRect.top - size.height * 0.05,
     );
+    _drawBow(canvas, bowCenter, size.width * 0.35);
   }
 
   void _drawBow(Canvas canvas, Offset center, double size) {
-    final bowPaint = Paint()
-      ..color = const Color(0xFFDC143C)
-      ..style = PaintingStyle.fill;
+    const Color ribbonRed = Color(0xFFDC143C);
+    const Color ribbonRedDark = Color(0xFF8B0000);
+    const Color ribbonRedLight = Color(0xFFFF6B6B);
 
-    // Left loop
+    // Left bow loop
     final leftPath = Path()
       ..moveTo(center.dx, center.dy)
-      ..quadraticBezierTo(
-        center.dx - size * 0.6,
-        center.dy - size * 0.3,
-        center.dx - size * 0.6,
-        center.dy,
+      ..cubicTo(
+        center.dx - size * 0.15,
+        center.dy - size * 0.35,
+        center.dx - size * 0.45,
+        center.dy - size * 0.25,
+        center.dx - size * 0.5,
+        center.dy - size * 0.05,
       )
-      ..quadraticBezierTo(
-        center.dx - size * 0.6,
-        center.dy + size * 0.3,
-        center.dx,
-        center.dy,
-      );
+      ..cubicTo(
+        center.dx - size * 0.52,
+        center.dy + size * 0.05,
+        center.dx - size * 0.45,
+        center.dy + size * 0.25,
+        center.dx - size * 0.15,
+        center.dy + size * 0.35,
+      )
+      ..close();
 
-    canvas.drawPath(leftPath, bowPaint);
+    canvas.drawPath(leftPath, Paint()..color = ribbonRed);
 
-    // Right loop
+    // Right bow loop - mirrored
     final rightPath = Path()
       ..moveTo(center.dx, center.dy)
-      ..quadraticBezierTo(
-        center.dx + size * 0.6,
-        center.dy - size * 0.3,
-        center.dx + size * 0.6,
-        center.dy,
+      ..cubicTo(
+        center.dx + size * 0.15,
+        center.dy - size * 0.35,
+        center.dx + size * 0.45,
+        center.dy - size * 0.25,
+        center.dx + size * 0.5,
+        center.dy - size * 0.05,
       )
-      ..quadraticBezierTo(
-        center.dx + size * 0.6,
-        center.dy + size * 0.3,
-        center.dx,
-        center.dy,
-      );
+      ..cubicTo(
+        center.dx + size * 0.52,
+        center.dy + size * 0.05,
+        center.dx + size * 0.45,
+        center.dy + size * 0.25,
+        center.dx + size * 0.15,
+        center.dy + size * 0.35,
+      )
+      ..close();
 
-    canvas.drawPath(rightPath, bowPaint);
+    canvas.drawPath(rightPath, Paint()..color = ribbonRed);
 
     // Center knot
-    canvas.drawCircle(center, size * 0.15, bowPaint);
+    final double knotSize = size * 0.12;
+    canvas.drawCircle(center, knotSize, Paint()..color = ribbonRedDark);
+
+    // Highlight on knot
+    canvas.drawCircle(
+      Offset(center.dx - knotSize * 0.3, center.dy - knotSize * 0.3),
+      knotSize * 0.4,
+      Paint()..color = ribbonRedLight.withOpacity(0.6),
+    );
   }
 
   @override

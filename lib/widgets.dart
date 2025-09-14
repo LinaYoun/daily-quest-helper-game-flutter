@@ -249,7 +249,9 @@ class CharacterView extends StatelessWidget {
 }
 
 class HeaderBar extends StatelessWidget {
-  const HeaderBar({super.key});
+  const HeaderBar({super.key, this.title = '일일 임무', this.showTimer = true});
+  final String title;
+  final bool showTimer;
 
   @override
   Widget build(BuildContext context) {
@@ -279,9 +281,9 @@ class HeaderBar extends StatelessWidget {
                   ],
                 ),
                 alignment: Alignment.center,
-                child: const Text(
-                  '일일 임무',
-                  style: TextStyle(
+                child: Text(
+                  title,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 34,
                     fontWeight: FontWeight.w800,
@@ -291,22 +293,24 @@ class HeaderBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const <Widget>[
-              Icon(Icons.access_time, size: 20, color: colorText),
-              SizedBox(width: 6),
-              Text(
-                '6 시간 24 분',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: colorText,
-                  fontWeight: FontWeight.w700,
+          if (showTimer) ...<Widget>[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const <Widget>[
+                Icon(Icons.access_time, size: 20, color: colorText),
+                SizedBox(width: 6),
+                Text(
+                  '6 시간 24 분',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: colorText,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -394,12 +398,59 @@ class QuestGridView extends StatelessWidget {
     super.key,
     required this.quests,
     required this.onComplete,
+    this.onDelete,
   });
   final List<Quest> quests;
   final void Function(int id) onComplete;
+  final void Function(int id)? onDelete;
 
   @override
   Widget build(BuildContext context) {
+    if (quests.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            SizedBox(
+              width: 96,
+              height: 96,
+              child: Stack(
+                alignment: Alignment.center,
+                children: <Widget>[
+                  Container(
+                    width: 96,
+                    height: 96,
+                    decoration: const BoxDecoration(
+                      color: colorAccent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: colorPaper,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text('🐹', style: TextStyle(fontSize: 36)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '일일 임무를 등록하세요',
+              style: TextStyle(
+                color: colorText,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -408,8 +459,11 @@ class QuestGridView extends StatelessWidget {
         childAspectRatio: 2.4,
       ),
       itemCount: quests.length,
-      itemBuilder: (context, index) =>
-          QuestCard(quest: quests[index], onComplete: onComplete),
+      itemBuilder: (context, index) => QuestCard(
+        quest: quests[index],
+        onComplete: onComplete,
+        onDelete: onDelete,
+      ),
     );
   }
 }
@@ -490,8 +544,8 @@ class QuestItem extends StatelessWidget {
   }
 }
 
-class _DashedRRectPainter extends CustomPainter {
-  const _DashedRRectPainter({
+class DashedRRectPainter extends CustomPainter {
+  const DashedRRectPainter({
     required this.strokeColor,
     required this.fillColor,
     required this.radius,
@@ -533,7 +587,7 @@ class _DashedRRectPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _DashedRRectPainter oldDelegate) {
+  bool shouldRepaint(covariant DashedRRectPainter oldDelegate) {
     return oldDelegate.strokeColor != strokeColor ||
         oldDelegate.fillColor != fillColor ||
         oldDelegate.radius != radius;
@@ -541,91 +595,103 @@ class _DashedRRectPainter extends CustomPainter {
 }
 
 class QuestCard extends StatelessWidget {
-  const QuestCard({super.key, required this.quest, required this.onComplete});
+  const QuestCard({
+    super.key,
+    required this.quest,
+    required this.onComplete,
+    this.onDelete,
+  });
   final Quest quest;
   final void Function(int id) onComplete;
+  final void Function(int id)? onDelete;
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: const _DashedRRectPainter(
-        strokeColor: kCardStroke,
-        fillColor: kCardFill,
-        radius: kQuestCardRadius,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(34),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                QuestGlyph(
-                  title: quest.title,
-                  iconUrl: quest.iconUrl,
-                  size: 52,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    quest.title,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: const TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.w800,
-                      color: colorText,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: onDelete != null ? () => onDelete!(quest.id) : null,
+      child: CustomPaint(
+        painter: const DashedRRectPainter(
+          strokeColor: kCardStroke,
+          fillColor: kCardFill,
+          radius: kQuestCardRadius,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(34),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  QuestGlyph(
+                    title: quest.title,
+                    iconUrl: quest.iconUrl,
+                    size: 52,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      quest.title,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 23,
+                        fontWeight: FontWeight.w800,
+                        color: colorText,
+                      ),
                     ),
                   ),
-                ),
-                // Removed duplicate top progress chip
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: kChipFillAlt,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${quest.progress}/${quest.target}',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: colorText,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _CompletionIcon(completed: quest.isCompleted),
-                const SizedBox(width: 8),
-                InkWell(
-                  onTap: quest.isCompleted ? null : () => onComplete(quest.id),
-                  child: Container(
+                  // Removed duplicate top progress chip
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: colorAccent.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(22),
+                      color: kChipFillAlt,
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    child: _RewardTile(
-                      imageUrl: quest.rewardUrl,
-                      isCompleted: quest.isCompleted,
+                    child: Text(
+                      '${quest.progress}/${quest.target}',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: colorText,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 8),
+                  _CompletionIcon(completed: quest.isCompleted),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: quest.isCompleted
+                        ? null
+                        : () => onComplete(quest.id),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorAccent.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: _RewardTile(
+                        imageUrl: quest.rewardUrl,
+                        isCompleted: quest.isCompleted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -717,7 +783,10 @@ class _RewardTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: imageUrl != null && imageUrl!.isNotEmpty
             ? _buildRewardImage(imageUrl!)
-            : const Icon(Icons.card_giftcard, color: Colors.white, size: 28),
+            : CustomPaint(
+                size: const Size(40, 40),
+                painter: RewardIconPainter(),
+              ),
       ),
     );
 
@@ -847,6 +916,203 @@ class RewardDialog extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class RegisterQuestScreen extends StatelessWidget {
+  const RegisterQuestScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: colorBackground,
+      body: SafeArea(
+        child: Stack(
+          children: <Widget>[
+            const Positioned.fill(child: PatternBackground()),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 900),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colorPaper.withOpacity(0.92),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 74, 24, 24),
+                          child: _RegisterForm(),
+                        ),
+                        const HeaderBar(title: '일일 임무 등록', showTimer: false),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const Positioned(
+              top: 12,
+              right: 12,
+              child: TopRightCharacterBadge(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RegisterForm extends StatefulWidget {
+  @override
+  State<_RegisterForm> createState() => _RegisterFormState();
+}
+
+class _RegisterFormState extends State<_RegisterForm> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _title = TextEditingController();
+  final TextEditingController _target = TextEditingController(text: '1');
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _target.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: const <Widget>[
+              Icon(Icons.edit, color: colorText),
+              SizedBox(width: 8),
+              Text(
+                '새 임무 정보를 입력하세요',
+                style: TextStyle(
+                  color: colorText,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _PaperField(
+            label: '제목',
+            child: TextFormField(
+              controller: _title,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                hintText: '예: 설거지',
+              ),
+              style: const TextStyle(
+                color: colorText,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? '제목을 입력하세요' : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _PaperField(
+            label: '목표 수치',
+            child: TextFormField(
+              controller: _target,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                hintText: '예: 35',
+              ),
+              style: const TextStyle(
+                color: colorText,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              validator: (v) =>
+                  (int.tryParse(v ?? '') == null) ? '숫자를 입력하세요' : null,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorAccent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                elevation: 6,
+              ),
+              onPressed: () {
+                if (_formKey.currentState?.validate() ?? false) {
+                  final String title = _title.text.trim();
+                  final int target = int.parse(_target.text.trim());
+                  Navigator.of(
+                    context,
+                  ).pop(<String, dynamic>{'title': title, 'target': target});
+                }
+              },
+              child: const Text(
+                '등록',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaperField extends StatelessWidget {
+  const _PaperField({required this.label, required this.child});
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          label,
+          style: const TextStyle(color: colorText, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        CustomPaint(
+          painter: const DashedRRectPainter(
+            strokeColor: kCardStroke,
+            fillColor: kCardFill,
+            radius: 18,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            child: child,
+          ),
+        ),
+      ],
     );
   }
 }

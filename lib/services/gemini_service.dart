@@ -209,4 +209,36 @@ class GeminiService {
       return null;
     }
   }
+
+  Future<Map<String, String?>?> generateQuestAssets({
+    required String title,
+    String? referenceDataUrl,
+  }) async {
+    if (functionUrl == null || functionUrl!.isEmpty) return null;
+    try {
+      final String endpoint = functionUrl!.replaceFirst(
+        RegExp(r'generateIcon$'),
+        'generateQuestAssets',
+      );
+      final Uri url = Uri.parse(endpoint);
+      final Map<String, dynamic> body = <String, dynamic>{
+        'title': title,
+        if (referenceDataUrl != null) 'referenceDataUrl': referenceDataUrl,
+      };
+      final http.Response resp = await http.post(
+        url,
+        headers: <String, String>{'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+      if (resp.statusCode != 200) return null;
+      final Map<String, dynamic> data =
+          jsonDecode(resp.body) as Map<String, dynamic>;
+      return <String, String?>{
+        'icon': data['iconDataUrl'] as String?,
+        'reward': data['rewardDataUrl'] as String?,
+      };
+    } catch (_) {
+      return null;
+    }
+  }
 }
