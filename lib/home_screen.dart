@@ -281,11 +281,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                           16,
                                           16,
                                         ),
-                                        child:
-                                            ValueListenableBuilder<List<Quest>>(
-                                              valueListenable: _quests,
-                                              builder: (context, quests, __) =>
-                                                  SizedBox.expand(
+                                        child: ValueListenableBuilder<List<Quest>>(
+                                          valueListenable: _quests,
+                                          builder: (context, quests, __) =>
+                                              Column(
+                                                children: <Widget>[
+                                                  Expanded(
                                                     child: QuestGridView(
                                                       quests: quests,
                                                       onComplete:
@@ -294,7 +295,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                           _handleDeleteQuest,
                                                     ),
                                                   ),
-                                            ),
+                                                ],
+                                              ),
+                                        ),
                                       ),
                                       const HeaderBar(),
                                     ],

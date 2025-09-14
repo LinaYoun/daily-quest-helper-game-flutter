@@ -94,7 +94,11 @@ class RewardGlyph extends StatelessWidget {
       width: 64,
       height: 64,
       alignment: Alignment.center,
-      child: CustomPaint(painter: RewardIconPainter()),
+      child: CustomPaint(
+        painter: RewardIconPainter(),
+        isComplex: true,
+        willChange: false,
+      ),
     );
   }
 }
@@ -798,19 +802,26 @@ class QuestGridView extends StatelessWidget {
         ),
       );
     }
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 2.4,
-      ),
-      itemCount: quests.length,
-      itemBuilder: (context, index) => QuestCard(
-        quest: quests[index],
-        onComplete: onComplete,
-        onDelete: onDelete,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Responsive grid height to avoid vertical overflows on small screens
+        final double w = constraints.maxWidth;
+        final double ratio = w < 800 ? 1.7 : 2.2;
+        return GridView.builder(
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 520,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: ratio,
+          ),
+          itemCount: quests.length,
+          itemBuilder: (context, index) => QuestCard(
+            quest: quests[index],
+            onComplete: onComplete,
+            onDelete: onDelete,
+          ),
+        );
+      },
     );
   }
 }
@@ -876,11 +887,18 @@ class QuestItem extends StatelessWidget {
               const SizedBox(width: 12),
               _CompletionIcon(completed: quest.isCompleted),
               const SizedBox(width: 12),
-              InkWell(
-                onTap: quest.isCompleted ? null : () => onComplete(quest.id),
-                child: _RewardTile(
-                  imageUrl: quest.rewardUrl,
-                  isCompleted: quest.isCompleted,
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: quest.isCompleted ? null : () => onComplete(quest.id),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: _RewardTile(
+                      imageUrl: quest.rewardUrl,
+                      isCompleted: quest.isCompleted,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1016,22 +1034,26 @@ class QuestCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   _CompletionIcon(completed: quest.isCompleted),
                   const SizedBox(width: 8),
-                  InkWell(
-                    onTap: quest.isCompleted
-                        ? null
-                        : () => onComplete(quest.id),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorAccent.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      child: _RewardTile(
-                        imageUrl: quest.rewardUrl,
-                        isCompleted: quest.isCompleted,
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(22),
+                      onTap: quest.isCompleted
+                          ? null
+                          : () => onComplete(quest.id),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorAccent.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        child: _RewardTile(
+                          imageUrl: quest.rewardUrl,
+                          isCompleted: quest.isCompleted,
+                        ),
                       ),
                     ),
                   ),
@@ -1200,8 +1222,10 @@ class RewardDialog extends StatelessWidget {
         alignment: Alignment.center,
         padding: const EdgeInsets.all(16),
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 420),
-          padding: const EdgeInsets.all(24),
+          constraints: BoxConstraints(
+            maxWidth: 420,
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
           decoration: BoxDecoration(
             color: colorPaper,
             borderRadius: BorderRadius.circular(24),
@@ -1213,53 +1237,60 @@ class RewardDialog extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Text(
-                'Quest Complete!',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: colorText,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'You finished ${reward.questName} and got a reward!',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, color: colorText),
-              ),
-              const SizedBox(height: 16),
-              if (reward.imageUrl.isNotEmpty)
-                SizedBox(
-                  width: 160,
-                  height: 160,
-                  child: Image.network(reward.imageUrl, fit: BoxFit.contain),
-                )
-              else
-                const Icon(Icons.card_giftcard, size: 120, color: colorAccent),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorAccent,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Text(
+                  'Quest Complete!',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: colorText,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(999),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'You finished ${reward.questName} and got a reward!',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16, color: colorText),
+                ),
+                const SizedBox(height: 16),
+                if (reward.imageUrl.isNotEmpty)
+                  SizedBox(
+                    width: 160,
+                    height: 160,
+                    child: Image.network(reward.imageUrl, fit: BoxFit.contain),
+                  )
+                else
+                  const Icon(
+                    Icons.card_giftcard,
+                    size: 120,
+                    color: colorAccent,
                   ),
-                  elevation: 6,
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    elevation: 6,
+                  ),
+                  onPressed: onClaim,
+                  child: const Text(
+                    'Claim',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
                 ),
-                onPressed: onClaim,
-                child: const Text(
-                  'Claim',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1332,8 +1363,10 @@ class ItemAwardDialog extends StatelessWidget {
         child: SizedBox(
           width: 600,
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 1040),
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            constraints: BoxConstraints(
+              maxWidth: 1040,
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
             decoration: BoxDecoration(
               color: colorPaper,
               borderRadius: BorderRadius.circular(24),
@@ -1345,79 +1378,84 @@ class ItemAwardDialog extends StatelessWidget {
                 ),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                // Header badge style
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: kChipFillAlt,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    '보상 획득!',
-                    style: TextStyle(
-                      color: colorText,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  '새로운 꾸미기 아이템 획득!',
-                  style: TextStyle(
-                    color: colorText,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _iconFor(itemId),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: kChipFillAlt,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    _labelFor(itemId),
-                    style: const TextStyle(
-                      color: colorText,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 22),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorAccent,
-                    foregroundColor: Colors.white,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 36,
-                      vertical: 12,
+                      horizontal: 18,
+                      vertical: 10,
                     ),
-                    shape: RoundedRectangleBorder(
+                    decoration: BoxDecoration(
+                      color: kChipFillAlt,
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    elevation: 6,
+                    child: const Text(
+                      '보상 획득!',
+                      style: TextStyle(
+                        color: colorText,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
-                  onPressed: onClose,
-                  child: const Text(
-                    '확인',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '새로운 꾸미기 아이템 획득!',
+                    style: TextStyle(
+                      color: colorText,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  _iconFor(itemId),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: kChipFillAlt,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      _labelFor(itemId),
+                      style: const TextStyle(
+                        color: colorText,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 36,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      elevation: 6,
+                    ),
+                    onPressed: onClose,
+                    child: const Text(
+                      '확인',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1443,21 +1481,24 @@ class BadgeAwardDialog extends StatelessWidget {
         color: Colors.black.withOpacity(0.6),
         alignment: Alignment.center,
         padding: const EdgeInsets.all(16),
-        child: SizedBox(
-          width: 600,
-          child: Container(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: 600,
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          decoration: BoxDecoration(
+            color: colorPaper,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-            decoration: BoxDecoration(
-              color: colorPaper,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
@@ -1669,7 +1710,11 @@ class RegisterQuestScreen extends StatelessWidget {
                       children: <Widget>[
                         Padding(
                           padding: const EdgeInsets.fromLTRB(24, 74, 24, 24),
-                          child: _RegisterForm(),
+                          child: SingleChildScrollView(
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            child: _RegisterForm(),
+                          ),
                         ),
                         const HeaderBar(title: '일일 임무 등록', showTimer: false),
                       ],

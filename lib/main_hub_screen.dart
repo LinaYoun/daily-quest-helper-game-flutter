@@ -126,21 +126,24 @@ class _MainHubScreenState extends State<MainHubScreen> {
                                 16,
                                 16,
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: <Widget>[
-                                  _MissionRow(
-                                    onTapDaily: () => _openDaily(context),
-                                    onTapWeekly: () => _openWeekly(context),
-                                    onTapStreak: () => _openStreak(context),
-                                    dailySubtitle: '$_completed/$_total',
-                                    weeklySubtitle:
-                                        '$_weeklyCompleted/$_weeklyTotal',
-                                    streakSubtitle: 'Day $_streakDays',
-                                  ),
-                                  const SizedBox(height: 24),
-                                  _OwnedItemsSection(counts: _ownedCounts),
-                                ],
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: <Widget>[
+                                    _MissionRow(
+                                      onTapDaily: () => _openDaily(context),
+                                      onTapWeekly: () => _openWeekly(context),
+                                      onTapStreak: () => _openStreak(context),
+                                      dailySubtitle: '$_completed/$_total',
+                                      weeklySubtitle:
+                                          '$_weeklyCompleted/$_weeklyTotal',
+                                      streakSubtitle: 'Day $_streakDays',
+                                    ),
+                                    const SizedBox(height: 24),
+                                    _OwnedItemsSection(counts: _ownedCounts),
+                                  ],
+                                ),
                               ),
                             ),
                             const HeaderBar(
@@ -303,45 +306,45 @@ class _OwnedItemsSection extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: 4,
-          childAspectRatio: 0.9,
+          childAspectRatio: 0.78,
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
           children: <Widget>[
             _ItemCard(
               graphic: SizedBox(
-                width: 150,
-                height: 150,
+                width: 140,
+                height: 140,
                 child: CustomPaint(painter: _StarItemPainter()),
               ),
               label: 'x${counts[1] ?? 0}',
-              iconSize: 150,
+              iconSize: 140,
             ),
             _ItemCard(
               graphic: SizedBox(
-                width: 150,
-                height: 150,
+                width: 140,
+                height: 140,
                 child: CustomPaint(painter: _FlowerItemPainter()),
               ),
               label: 'x${counts[2] ?? 0}',
-              iconSize: 150,
+              iconSize: 140,
             ),
             _ItemCard(
               graphic: SizedBox(
-                width: 150,
-                height: 150,
+                width: 140,
+                height: 140,
                 child: CustomPaint(painter: _ButterflyItemPainter()),
               ),
               label: 'x${counts[3] ?? 0}',
-              iconSize: 150,
+              iconSize: 140,
             ),
             _ItemCard(
               graphic: SizedBox(
-                width: 150,
-                height: 150,
+                width: 140,
+                height: 140,
                 child: CustomPaint(painter: _BowItemPainter()),
               ),
               label: 'x${counts[4] ?? 0}',
-              iconSize: 150,
+              iconSize: 140,
             ),
           ],
         ),

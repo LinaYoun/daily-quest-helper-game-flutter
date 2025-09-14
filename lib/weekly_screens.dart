@@ -294,12 +294,16 @@ class WeeklyRegisterScreen extends StatelessWidget {
                     ),
                     child: Stack(
                       clipBehavior: Clip.none,
-                      children: const <Widget>[
+                      children: <Widget>[
                         Padding(
-                          padding: EdgeInsets.fromLTRB(24, 74, 24, 24),
-                          child: _WeeklyForm(),
+                          padding: const EdgeInsets.fromLTRB(24, 74, 24, 24),
+                          child: SingleChildScrollView(
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            child: const _WeeklyForm(),
+                          ),
                         ),
-                        HeaderBar(title: '주간 임무 등록', showTimer: false),
+                        const HeaderBar(title: '주간 임무 등록', showTimer: false),
                       ],
                     ),
                   ),

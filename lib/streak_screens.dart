@@ -377,9 +377,18 @@ class _StreakRegisterScreenState extends State<StreakRegisterScreen> {
                         child: Stack(
                           clipBehavior: Clip.none,
                           children: <Widget>[
-                            const Padding(
-                              padding: EdgeInsets.fromLTRB(24, 74, 24, 24),
-                              child: _StreakForm(),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                24,
+                                74,
+                                24,
+                                24,
+                              ),
+                              child: const SingleChildScrollView(
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
+                                child: _StreakForm(),
+                              ),
                             ),
                             const HeaderBar(
                               title: '연속 임무 등록',
