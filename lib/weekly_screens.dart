@@ -3,6 +3,7 @@ import 'constants.dart';
 import 'widgets.dart';
 import 'models.dart';
 import 'services/database_service.dart';
+import 'badge_painters.dart';
 
 class WeeklyHomeScreen extends StatefulWidget {
   const WeeklyHomeScreen({super.key});
@@ -142,15 +143,42 @@ class _WeeklyHomeScreenState extends State<WeeklyHomeScreen> {
                                         questName: q.title,
                                         imageUrl: q.rewardUrl ?? '',
                                       );
+                                      // persist completion first
+                                      final completed = q.copyWith(
+                                        progress: newProgress,
+                                        status: QuestStatus.completed,
+                                      );
+                                      await _db.updateWeeklyQuest(completed);
+                                      final String? wbadge =
+                                          await DatabaseService()
+                                              .awardBadgeWeekly3IfNeeded();
+                                      if (wbadge != null && mounted) {
+                                        showDialog<void>(
+                                          context: context,
+                                          barrierDismissible: true,
+                                          barrierColor: Colors.black
+                                              .withOpacity(0.35),
+                                          builder: (_) => Stack(
+                                            children: <Widget>[
+                                              BadgeAwardDialog(
+                                                title: '새로운 배지 획득! (weekly3)',
+                                                child: CustomPaint(
+                                                  painter:
+                                                      Weekly3BadgePainter(),
+                                                ),
+                                                onClose: () =>
+                                                    Navigator.of(context).pop(),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }
+                                    } else {
+                                      final updated = q.copyWith(
+                                        progress: newProgress,
+                                      );
+                                      await _db.updateWeeklyQuest(updated);
                                     }
-
-                                    final updated = q.copyWith(
-                                      progress: newProgress,
-                                      status: newProgress >= q.target
-                                          ? QuestStatus.completed
-                                          : q.status,
-                                    );
-                                    await _db.updateWeeklyQuest(updated);
                                     _quests.value = await _db
                                         .getAllWeeklyQuests();
                                   },

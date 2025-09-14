@@ -64,14 +64,31 @@ class OwnedItems extends Table {
   Set<Column<Object>>? get primaryKey => {id};
 }
 
+// Earned badges table
+class Badges extends Table {
+  IntColumn get id => integer()(); // e.g., 1 => daily5
+  TextColumn get key => text()(); // 'daily5'
+  TextColumn get earnedAt => text().nullable()();
+
+  @override
+  Set<Column<Object>>? get primaryKey => {id};
+}
+
 @DriftDatabase(
-  tables: [Quests, WeeklyQuests, StreakQuests, StreakStates, OwnedItems],
+  tables: [
+    Quests,
+    WeeklyQuests,
+    StreakQuests,
+    StreakStates,
+    OwnedItems,
+    Badges,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -90,6 +107,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 5) {
         await m.createTable(ownedItems);
+      }
+      if (from < 6) {
+        await m.createTable(badges);
       }
     },
   );
@@ -128,6 +148,12 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> upsertOwnedItem(OwnedItemsCompanion data) async {
     await into(ownedItems).insertOnConflictUpdate(data);
+  }
+
+  // Badges helpers
+  Future<List<Badge>> getAllBadges() async => select(badges).get();
+  Future<void> upsertBadge(BadgesCompanion data) async {
+    await into(badges).insertOnConflictUpdate(data);
   }
 
   Future<void> deleteQuestById(int questId) async {

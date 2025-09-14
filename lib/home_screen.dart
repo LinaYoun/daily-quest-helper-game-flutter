@@ -3,6 +3,7 @@ import 'constants.dart';
 import 'models.dart';
 import 'widgets.dart';
 import 'services/database_service.dart';
+import 'badge_painters.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -70,14 +71,31 @@ class _HomeScreenState extends State<HomeScreen> {
         status: QuestStatus.completed,
         progress: quest.target,
       );
+      // Check badge awarding condition
+      await _db.updateQuest(updatedQuest);
+      final String? badge = await _db.awardBadgeDaily5IfNeeded();
+      if (badge != null && mounted) {
+        showDialog<void>(
+          context: context,
+          barrierDismissible: true,
+          barrierColor: Colors.black.withOpacity(0.35),
+          builder: (_) => Stack(
+            children: <Widget>[
+              BadgeAwardDialog(
+                title: '새로운 배지 획득! (daily5)',
+                child: CustomPaint(painter: Daily5BadgePainter()),
+                onClose: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        );
+      }
     } else {
       updatedQuest = quest.copyWith(progress: newProgress);
+      await _db.updateQuest(updatedQuest);
     }
 
-    // Update DB then refresh from DB to keep single source of truth
-    try {
-      await _db.updateQuest(updatedQuest);
-    } catch (_) {}
+    // Refresh UI from DB
     _quests.value = await _db.getAllQuests();
   }
 

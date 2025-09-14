@@ -3,6 +3,7 @@ import 'constants.dart';
 import 'widgets.dart';
 import 'models.dart';
 import 'services/database_service.dart';
+import 'badge_painters.dart';
 
 class StreakHomeScreen extends StatefulWidget {
   const StreakHomeScreen({super.key});
@@ -193,6 +194,34 @@ class _StreakHomeScreenState extends State<StreakHomeScreen> {
                                         lastResetYmd: lastResetYmd ?? today,
                                         lastCompletionYmd: today,
                                       );
+                                      await DatabaseService()
+                                          .awardBadgeStreak1IfNeeded();
+                                      if (mounted) {
+                                        final earned = await DatabaseService()
+                                            .getEarnedBadges();
+                                        if (earned.contains('streak1')) {
+                                          showDialog<void>(
+                                            context: context,
+                                            barrierDismissible: true,
+                                            barrierColor: Colors.black
+                                                .withOpacity(0.35),
+                                            builder: (_) => Stack(
+                                              children: <Widget>[
+                                                BadgeAwardDialog(
+                                                  title: '새로운 배지 획득! (streak1)',
+                                                  child: CustomPaint(
+                                                    painter:
+                                                        Streak1BadgePainter(),
+                                                  ),
+                                                  onClose: () => Navigator.of(
+                                                    context,
+                                                  ).pop(),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }
+                                      }
                                       _quests.value = await _db
                                           .getAllStreakQuests();
                                     },

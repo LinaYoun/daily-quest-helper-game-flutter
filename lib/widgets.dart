@@ -8,6 +8,7 @@ import 'models.dart';
 import 'quest_icon_painter.dart';
 import 'owned_item_painters.dart';
 import 'services/database_service.dart';
+import 'badge_painters.dart';
 
 // Custom quest icons with colorful style
 class QuestGlyph extends StatelessWidget {
@@ -568,21 +569,41 @@ class _BadgesPanel extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
-            childAspectRatio: 1.0,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            children: const <Widget>[
-              _BadgePlaceholder(),
-              _BadgePlaceholder(),
-              _BadgePlaceholder(),
-              _BadgePlaceholder(),
-              _BadgePlaceholder(),
-              _BadgePlaceholder(),
-            ],
+          child: FutureBuilder<List<String>>(
+            future: DatabaseService().getEarnedBadges(),
+            builder: (context, snapshot) {
+              final earned = snapshot.data ?? const <String>[];
+              final bool hasDaily5 = earned.contains('daily5');
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 150, // ~120 badge + small padding
+                  mainAxisSpacing: 4,
+                  crossAxisSpacing: 4,
+                  childAspectRatio: 1.0,
+                ),
+                itemCount: 21,
+                itemBuilder: (context, index) {
+                  if (index == 0 && hasDaily5) {
+                    return _BadgeIcon(
+                      child: CustomPaint(painter: Daily5BadgePainter()),
+                    );
+                  }
+                  if (index == 1 && earned.contains('weekly3')) {
+                    return _BadgeIcon(
+                      child: CustomPaint(painter: Weekly3BadgePainter()),
+                    );
+                  }
+                  if (index == 2 && earned.contains('streak1')) {
+                    return _BadgeIcon(
+                      child: CustomPaint(painter: Streak1BadgePainter()),
+                    );
+                  }
+                  return const _BadgePlaceholder();
+                },
+              );
+            },
           ),
         ),
       ),
@@ -636,6 +657,18 @@ class _BadgePlaceholder extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _BadgeIcon extends StatelessWidget {
+  const _BadgeIcon({required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: Alignment.center,
+      child: SizedBox(width: 120, height: 120, child: child),
     );
   }
 }
@@ -1364,6 +1397,99 @@ class ItemAwardDialog extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 22),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 36,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    elevation: 6,
+                  ),
+                  onPressed: onClose,
+                  child: const Text(
+                    '확인',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BadgeAwardDialog extends StatelessWidget {
+  const BadgeAwardDialog({
+    super.key,
+    required this.title,
+    required this.child,
+    required this.onClose,
+  });
+  final String title;
+  final Widget child; // CustomPaint with specific badge painter
+  final VoidCallback onClose;
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withOpacity(0.6),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: 600,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            decoration: BoxDecoration(
+              color: colorPaper,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kChipFillAlt,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    '보상 획득!',
+                    style: TextStyle(
+                      color: colorText,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: colorText,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(width: 160, height: 160, child: child),
                 const SizedBox(height: 22),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(

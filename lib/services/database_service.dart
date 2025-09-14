@@ -239,6 +239,65 @@ class DatabaseService {
     return 1;
   }
 
+  // Badges API
+  Future<List<String>> getEarnedBadges() async {
+    final rows = await _db.getAllBadges();
+    return rows.map((b) => b.key).toList();
+  }
+
+  Future<String?> awardBadgeDaily5IfNeeded() async {
+    final earned = await getEarnedBadges();
+    if (earned.contains('daily5')) return null;
+    final quests = await getAllQuests();
+    final int completed = quests.where((q) => q.isCompleted).length;
+    if (completed >= 5) {
+      await _db.upsertBadge(
+        BadgesCompanion(
+          id: drift.Value(1),
+          key: drift.Value('daily5'),
+          earnedAt: drift.Value(DateTime.now().toIso8601String()),
+        ),
+      );
+      return 'daily5';
+    }
+    return null;
+  }
+
+  Future<String?> awardBadgeWeekly3IfNeeded() async {
+    final earned = await getEarnedBadges();
+    if (earned.contains('weekly3')) return null;
+    final weekly = await getAllWeeklyQuests();
+    final int completed = weekly.where((q) => q.isCompleted).length;
+    if (completed >= 3) {
+      await _db.upsertBadge(
+        BadgesCompanion(
+          id: drift.Value(2),
+          key: drift.Value('weekly3'),
+          earnedAt: drift.Value(DateTime.now().toIso8601String()),
+        ),
+      );
+      return 'weekly3';
+    }
+    return null;
+  }
+
+  Future<String?> awardBadgeStreak1IfNeeded() async {
+    final earned = await getEarnedBadges();
+    if (earned.contains('streak1')) return null;
+    final (int days, String? _, String? __) = await getStreakState();
+    if (days >= 1) {
+      await _db.upsertBadge(
+        BadgesCompanion(
+          id: drift.Value(3),
+          key: drift.Value('streak1'),
+          earnedAt: drift.Value(DateTime.now().toIso8601String()),
+        ),
+      );
+      return 'streak1';
+    }
+    return null;
+  }
+
   // Owned items API
   // itemId: 1 star, 2 flower, 3 butterfly, 4 bow
   Future<Map<int, int>> getOwnedItemCounts() async {
