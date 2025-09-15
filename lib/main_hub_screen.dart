@@ -7,6 +7,7 @@ import 'models.dart';
 import 'services/database_service.dart';
 import 'weekly_screens.dart';
 import 'streak_screens.dart';
+import 'services/background_audio_service.dart';
 
 class MainHubScreen extends StatefulWidget {
   const MainHubScreen({super.key});
@@ -59,6 +60,7 @@ class _MainHubScreenState extends State<MainHubScreen> {
   }
 
   Future<void> _openDaily(BuildContext context) async {
+    await BackgroundAudioService().initializeAndPlay();
     final result = await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const HomeScreen()));
@@ -68,6 +70,7 @@ class _MainHubScreenState extends State<MainHubScreen> {
   }
 
   void _openWeekly(BuildContext context) {
+    BackgroundAudioService().initializeAndPlay();
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => const WeeklyHomeScreen()))
         .then((result) {
@@ -78,6 +81,7 @@ class _MainHubScreenState extends State<MainHubScreen> {
   }
 
   void _openStreak(BuildContext context) {
+    BackgroundAudioService().initializeAndPlay();
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => const StreakHomeScreen()))
         .then((result) {
@@ -147,7 +151,7 @@ class _MainHubScreenState extends State<MainHubScreen> {
                               ),
                             ),
                             const HeaderBar(
-                              title: 'Daily Quest',
+                              title: 'Routine Helper',
                               showTimer: false,
                             ),
                           ],

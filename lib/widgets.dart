@@ -1464,6 +1464,149 @@ class ItemAwardDialog extends StatelessWidget {
   }
 }
 
+class DeleteConfirmDialog extends StatelessWidget {
+  const DeleteConfirmDialog({
+    super.key,
+    required this.title,
+    required this.onConfirm,
+    required this.onCancel,
+    this.onEdit,
+  });
+  final String title;
+  final VoidCallback onConfirm;
+  final VoidCallback onCancel;
+  final VoidCallback? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withOpacity(0.6),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(16),
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: 520,
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          decoration: BoxDecoration(
+            color: colorPaper,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kChipFillAlt,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    '확인 필요',
+                    style: TextStyle(
+                      color: colorText,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: colorText,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    TextButton(
+                      onPressed: onCancel,
+                      child: const Text(
+                        '취소',
+                        style: TextStyle(
+                          color: colorText,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    if (onEdit != null) ...<Widget>[
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kChipFillAlt,
+                          foregroundColor: colorText,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          elevation: 2,
+                        ),
+                        onPressed: onEdit,
+                        child: const Text(
+                          '수정',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        elevation: 6,
+                      ),
+                      onPressed: onConfirm,
+                      child: const Text(
+                        '삭제',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class BadgeAwardDialog extends StatelessWidget {
   const BadgeAwardDialog({
     super.key,
@@ -1730,6 +1873,195 @@ class RegisterQuestScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class EditQuestScreen extends StatelessWidget {
+  const EditQuestScreen({super.key, required this.quest});
+  final Quest quest;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: colorBackground,
+      body: SafeArea(
+        child: Stack(
+          children: <Widget>[
+            const Positioned.fill(child: PatternBackground()),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 900),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colorPaper.withOpacity(0.92),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 74, 24, 24),
+                          child: _EditForm(quest: quest),
+                        ),
+                        const HeaderBar(title: '일일 임무 수정', showTimer: false),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const Positioned(
+              top: 12,
+              right: 12,
+              child: TopRightCharacterBadge(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EditForm extends StatefulWidget {
+  const _EditForm({required this.quest});
+  final Quest quest;
+  @override
+  State<_EditForm> createState() => _EditFormState();
+}
+
+class _EditFormState extends State<_EditForm> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late final TextEditingController _title;
+  late final TextEditingController _target;
+
+  @override
+  void initState() {
+    super.initState();
+    _title = TextEditingController(text: widget.quest.title);
+    _target = TextEditingController(text: widget.quest.target.toString());
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _target.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: const <Widget>[
+              Icon(Icons.edit, color: colorText),
+              SizedBox(width: 8),
+              Text(
+                '임무 정보를 수정하세요',
+                style: TextStyle(
+                  color: colorText,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _PaperField(
+            label: '제목',
+            child: TextFormField(
+              controller: _title,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                hintText: '예: 설거지',
+              ),
+              style: const TextStyle(
+                color: colorText,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? '제목을 입력하세요' : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _PaperField(
+            label: '목표 수치',
+            child: TextFormField(
+              controller: _target,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                hintText: '예: 35',
+              ),
+              style: const TextStyle(
+                color: colorText,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              validator: (v) =>
+                  (int.tryParse(v ?? '') == null) ? '숫자를 입력하세요' : null,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  '취소',
+                  style: TextStyle(
+                    color: colorText,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  elevation: 6,
+                ),
+                onPressed: () {
+                  if (_formKey.currentState?.validate() ?? false) {
+                    final String title = _title.text.trim();
+                    final int target = int.parse(_target.text.trim());
+                    Navigator.of(
+                      context,
+                    ).pop(<String, dynamic>{'title': title, 'target': target});
+                  }
+                },
+                child: const Text(
+                  '저장',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

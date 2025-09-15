@@ -123,29 +123,66 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleDeleteQuest(int id) async {
-    final confirmed = await showDialog<bool>(
+    final bool? actionDelete = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('퀘스트 삭제'),
-        content: const Text('이 퀘스트를 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('삭제'),
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.35),
+      builder: (_) => Stack(
+        children: <Widget>[
+          DeleteConfirmDialog(
+            title: '이 퀘스트를 삭제하시겠습니까?',
+            onCancel: () => Navigator.of(context).pop(null),
+            onConfirm: () => Navigator.of(context).pop(true),
+            onEdit: () => Navigator.of(context).pop(false),
           ),
         ],
       ),
     );
 
-    if (confirmed == true) {
+    if (actionDelete == true) {
       try {
         await _db.deleteQuest(id);
       } catch (_) {}
       _quests.value = await _db.getAllQuests();
+      return;
+    }
+
+    if (actionDelete == false) {
+      final List<Quest> cur = _quests.value;
+      final Quest q = cur.firstWhere(
+        (e) => e.id == id,
+        orElse: () => const Quest(
+          id: -1,
+          title: '',
+          progress: 0,
+          target: 1,
+          status: QuestStatus.incomplete,
+          iconUrl: null,
+          rewardUrl: null,
+        ),
+      );
+      if (q.id == -1) return;
+      final Map<String, dynamic>? edited = await Navigator.of(context)
+          .push<Map<String, dynamic>>(
+            MaterialPageRoute<Map<String, dynamic>>(
+              builder: (_) => EditQuestScreen(quest: q),
+            ),
+          );
+      if (edited != null) {
+        final String? title = edited['title'] as String?;
+        final int? target = edited['target'] as int?;
+        if (title != null && target != null) {
+          final Quest updated = q.copyWith(
+            title: title,
+            target: target,
+            progress: q.progress.clamp(0, target),
+          );
+          try {
+            await _db.updateQuest(updated);
+          } catch (_) {}
+          _quests.value = await _db.getAllQuests();
+        }
+      }
     }
   }
 

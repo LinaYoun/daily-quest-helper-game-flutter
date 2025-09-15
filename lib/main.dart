@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'constants.dart';
 import 'main_hub_screen.dart';
+import 'services/background_audio_service.dart';
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -9,6 +11,9 @@ void main() async {
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
+  if (!kIsWeb) {
+    await BackgroundAudioService().initializeAndPlay();
+  }
   runApp(const DailyQuestApp());
 }
 
@@ -19,7 +24,7 @@ class DailyQuestApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Daily Quest Helper',
+      title: 'Routine Helper',
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: colorBackground,

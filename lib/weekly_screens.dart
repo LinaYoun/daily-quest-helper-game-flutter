@@ -127,6 +127,82 @@ class _WeeklyHomeScreenState extends State<WeeklyHomeScreen> {
                                 builder: (context, quests, _) => QuestGridView(
                                   quests: quests,
                                   emptyMessage: '주간 임무를 등록하세요',
+                                  onDelete: (id) async {
+                                    final bool?
+                                    actionDelete = await showDialog<bool>(
+                                      context: context,
+                                      barrierDismissible: true,
+                                      barrierColor: Colors.black.withOpacity(
+                                        0.35,
+                                      ),
+                                      builder: (_) => Stack(
+                                        children: <Widget>[
+                                          DeleteConfirmDialog(
+                                            title: '이 주간 임무를 삭제하시겠습니까?',
+                                            onCancel: () =>
+                                                Navigator.of(context).pop(null),
+                                            onConfirm: () =>
+                                                Navigator.of(context).pop(true),
+                                            onEdit: () => Navigator.of(
+                                              context,
+                                            ).pop(false),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (actionDelete == true) {
+                                      await _db.deleteWeeklyQuest(id);
+                                      _quests.value = await _db
+                                          .getAllWeeklyQuests();
+                                      return;
+                                    }
+                                    if (actionDelete == false) {
+                                      final List<Quest> current = _quests.value;
+                                      final Quest q = current.firstWhere(
+                                        (e) => e.id == id,
+                                        orElse: () => const Quest(
+                                          id: -1,
+                                          title: '',
+                                          progress: 0,
+                                          target: 1,
+                                          status: QuestStatus.incomplete,
+                                          iconUrl: null,
+                                          rewardUrl: null,
+                                        ),
+                                      );
+                                      if (q.id == -1) return;
+                                      final Map<String, dynamic>? edited =
+                                          await Navigator.of(
+                                            context,
+                                          ).push<Map<String, dynamic>>(
+                                            MaterialPageRoute<
+                                              Map<String, dynamic>
+                                            >(
+                                              builder: (_) =>
+                                                  EditQuestScreen(quest: q),
+                                            ),
+                                          );
+                                      if (edited != null) {
+                                        final String? title =
+                                            edited['title'] as String?;
+                                        final int? target =
+                                            edited['target'] as int?;
+                                        if (title != null && target != null) {
+                                          final Quest updated = q.copyWith(
+                                            title: title,
+                                            target: target,
+                                            progress: q.progress.clamp(
+                                              0,
+                                              target,
+                                            ),
+                                          );
+                                          await _db.updateWeeklyQuest(updated);
+                                          _quests.value = await _db
+                                              .getAllWeeklyQuests();
+                                        }
+                                      }
+                                    }
+                                  },
                                   onComplete: (id) async {
                                     final List<Quest> current = await _db
                                         .getAllWeeklyQuests();
