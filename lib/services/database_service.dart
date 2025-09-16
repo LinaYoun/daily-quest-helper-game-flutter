@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' as drift;
 import '../models.dart' as domain;
 import 'drift_database.dart';
+import '../constants.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -8,6 +9,47 @@ class DatabaseService {
   DatabaseService._internal();
 
   final AppDatabase _db = AppDatabase();
+
+  // Player state API (stored in AppStates)
+  Future<(int level, int xp, int xpToNext)> getPlayerLevelState() async {
+    final String? levelRaw = await _db.getAppState('player_level');
+    final String? xpRaw = await _db.getAppState('player_xp');
+    final int level = int.tryParse(levelRaw ?? '') ?? 1;
+    final int xp = int.tryParse(xpRaw ?? '') ?? 0;
+    final int xpToNext = _xpRequiredForLevel(level);
+    return (level, xp, xpToNext);
+  }
+
+  Future<void> ensurePlayerStateInitialized() async {
+    final String? levelRaw = await _db.getAppState('player_level');
+    final String? xpRaw = await _db.getAppState('player_xp');
+    if (levelRaw == null || xpRaw == null) {
+      await _db.setAppState('player_level', '1');
+      await _db.setAppState('player_xp', '0');
+    }
+  }
+
+  Future<(int newLevel, int newXp, bool leveledUp)> awardXp(int amount) async {
+    await ensurePlayerStateInitialized();
+    final (int currentLevel, int currentXp, int _) =
+        await getPlayerLevelState();
+    int level = currentLevel;
+    int xp = currentXp + amount;
+    bool leveledUp = false;
+    while (xp >= _xpRequiredForLevel(level)) {
+      xp -= _xpRequiredForLevel(level);
+      level += 1;
+      leveledUp = true;
+    }
+    await _db.setAppState('player_level', level.toString());
+    await _db.setAppState('player_xp', xp.toString());
+    return (level, xp, leveledUp);
+  }
+
+  int _xpRequiredForLevel(int level) {
+    // Arithmetic progression: base + growth*(level-1)
+    return kBaseXpToLevel + kXpGrowthPerLevel * (level - 1);
+  }
 
   // Create
   Future<int> insertQuest(domain.Quest quest) async {

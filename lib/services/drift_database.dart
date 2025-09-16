@@ -82,6 +82,9 @@ class AppStates extends Table {
   Set<Column<Object>>? get primaryKey => {key};
 }
 
+// Player profile: single row with id=1
+// Note: Player level/xp persisted via key-value in AppStates
+
 @DriftDatabase(
   tables: [
     Quests,
@@ -191,6 +194,8 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteStreakQuestById(int questId) async {
     await (delete(streakQuests)..where((tbl) => tbl.id.equals(questId))).go();
   }
+
+  // Player state is handled through getAppState/setAppState
 }
 
 // Connection is provided by conditional import above

@@ -23,6 +23,11 @@ const Color kCardStroke = Color(0xFFDEBE96);
 const Color kChipFill = Color(0xFFEDE1BD);
 const Color kChipFillAlt = Color(0xFFE6DCB5);
 
+// Gameplay: Level & XP system
+const int kBaseXpToLevel = 100; // XP required to reach level 2
+const int kXpGrowthPerLevel = 25; // Additional XP needed per level
+const int kXpPerQuestCompletion = 50; // XP awarded when completing a quest
+
 // Placeholder asset URLs
 const String kPlaceholderIcon = '';
 const String kPlaceholderReward = '';

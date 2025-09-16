@@ -335,6 +335,83 @@ class HeaderBar extends StatelessWidget {
   }
 }
 
+// Reusable Level/XP chip for header overlays
+class LevelChip extends StatelessWidget {
+  const LevelChip({
+    super.key,
+    required this.level,
+    required this.xp,
+    required this.need,
+  });
+  final int level;
+  final int xp;
+  final int need;
+
+  @override
+  Widget build(BuildContext context) {
+    final double ratio = need == 0 ? 0 : (xp / need).clamp(0.0, 1.0);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: kChipFillAlt,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const SizedBox(width: 2),
+          Text(
+            'Lv.$level',
+            style: const TextStyle(
+              color: colorText,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 80,
+            height: 8,
+            child: Stack(
+              children: <Widget>[
+                Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xFFE3D7B0),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                FractionallySizedBox(
+                  widthFactor: ratio,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colorAccent,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$xp/$need',
+            style: const TextStyle(
+              color: colorText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class CornerDecoration extends StatelessWidget {
   const CornerDecoration({super.key});
   @override
@@ -838,8 +915,8 @@ class _ProfileHeader extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const <Widget>[
-            Text(
+          children: <Widget>[
+            const Text(
               '곰돌이',
               style: TextStyle(
                 color: colorText,
@@ -847,8 +924,14 @@ class _ProfileHeader extends StatelessWidget {
                 fontWeight: FontWeight.w800,
               ),
             ),
-            SizedBox(height: 8),
-            _LevelChip(level: 15),
+            const SizedBox(height: 8),
+            FutureBuilder<(int, int, int)>(
+              future: DatabaseService().getPlayerLevelState(),
+              builder: (context, snapshot) {
+                final int level = snapshot.data?.$1 ?? 1;
+                return _LevelChip(level: level);
+              },
+            ),
           ],
         ),
       ],

@@ -35,6 +35,7 @@ class _StreakHomeScreenState extends State<StreakHomeScreen> {
     super.initState();
     _load();
     _loadStickersAndCounts();
+    _db.ensurePlayerStateInitialized();
   }
 
   Future<void> _load() async {
@@ -403,6 +404,36 @@ class _StreakHomeScreenState extends State<StreakHomeScreen> {
                                             : q.status,
                                       );
                                       await _db.updateStreakQuest(updated);
+                                      if (newProgress >= q.target) {
+                                        final (
+                                          int newLevel,
+                                          int newXp,
+                                          bool leveledUp,
+                                        ) = await _db.awardXp(
+                                          kXpPerQuestCompletion,
+                                        );
+                                        if (leveledUp && mounted) {
+                                          showDialog<void>(
+                                            context: context,
+                                            barrierDismissible: true,
+                                            barrierColor: Colors.black
+                                                .withOpacity(0.35),
+                                            builder: (_) => Stack(
+                                              children: <Widget>[
+                                                BadgeAwardDialog(
+                                                  title: '레벨 업! Lv.$newLevel',
+                                                  child: CustomPaint(
+                                                    painter: AwardStarPainter(),
+                                                  ),
+                                                  onClose: () => Navigator.of(
+                                                    context,
+                                                  ).pop(),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }
+                                      }
                                       final after = await _db
                                           .getAllStreakQuests();
                                       final bool hasQuestsToday =
@@ -467,12 +498,30 @@ class _StreakHomeScreenState extends State<StreakHomeScreen> {
                                       }
                                       _quests.value = await _db
                                           .getAllStreakQuests();
+                                      if (mounted) setState(() {});
                                     },
                                   ),
                                 ),
                               ),
                             ),
                             const HeaderBar(title: '연속 임무', showTimer: false),
+                            Positioned(
+                              top: 8,
+                              right: 12,
+                              child: FutureBuilder<(int, int, int)>(
+                                future: _db.getPlayerLevelState(),
+                                builder: (context, snapshot) {
+                                  final int level = snapshot.data?.$1 ?? 1;
+                                  final int xp = snapshot.data?.$2 ?? 0;
+                                  final int need = snapshot.data?.$3 ?? 100;
+                                  return LevelChip(
+                                    level: level,
+                                    xp: xp,
+                                    need: need,
+                                  );
+                                },
+                              ),
+                            ),
                           ],
                         ),
                       ),

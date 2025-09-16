@@ -35,6 +35,7 @@ class _WeeklyHomeScreenState extends State<WeeklyHomeScreen> {
     super.initState();
     _load();
     _loadStickersAndCounts();
+    _db.ensurePlayerStateInitialized();
   }
 
   Future<void> _load() async {
@@ -371,6 +372,33 @@ class _WeeklyHomeScreenState extends State<WeeklyHomeScreen> {
                                         status: QuestStatus.completed,
                                       );
                                       await _db.updateWeeklyQuest(completed);
+                                      final (
+                                        int newLevel,
+                                        int newXp,
+                                        bool leveledUp,
+                                      ) = await _db.awardXp(
+                                        kXpPerQuestCompletion,
+                                      );
+                                      if (leveledUp && mounted) {
+                                        showDialog<void>(
+                                          context: context,
+                                          barrierDismissible: true,
+                                          barrierColor: Colors.black
+                                              .withOpacity(0.35),
+                                          builder: (_) => Stack(
+                                            children: <Widget>[
+                                              BadgeAwardDialog(
+                                                title: '레벨 업! Lv.$newLevel',
+                                                child: CustomPaint(
+                                                  painter: AwardStarPainter(),
+                                                ),
+                                                onClose: () =>
+                                                    Navigator.of(context).pop(),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }
                                       final String? wbadge =
                                           await DatabaseService()
                                               .awardBadgeWeekly3IfNeeded();
@@ -403,11 +431,29 @@ class _WeeklyHomeScreenState extends State<WeeklyHomeScreen> {
                                     }
                                     _quests.value = await _db
                                         .getAllWeeklyQuests();
+                                    if (mounted) setState(() {});
                                   },
                                 ),
                               ),
                             ),
                             const HeaderBar(title: '주간 임무', showTimer: false),
+                            Positioned(
+                              top: 8,
+                              right: 12,
+                              child: FutureBuilder<(int, int, int)>(
+                                future: _db.getPlayerLevelState(),
+                                builder: (context, snapshot) {
+                                  final int level = snapshot.data?.$1 ?? 1;
+                                  final int xp = snapshot.data?.$2 ?? 0;
+                                  final int need = snapshot.data?.$3 ?? 100;
+                                  return LevelChip(
+                                    level: level,
+                                    xp: xp,
+                                    need: need,
+                                  );
+                                },
+                              ),
+                            ),
                           ],
                         ),
                       ),

@@ -42,6 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadAssets();
     _loadStickersAndCounts();
+    // Ensure player state exists on first run
+    _db.ensurePlayerStateInitialized();
   }
 
   Future<void> _loadAssets() async {
@@ -226,7 +228,28 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       // Check badge awarding condition
       await _db.updateQuest(updatedQuest);
+      // Award XP for completion
+      final (int newLevel, int newXp, bool leveledUp) = await _db.awardXp(
+        kXpPerQuestCompletion,
+      );
+      if (leveledUp && mounted) {
+        showDialog<void>(
+          context: context,
+          barrierDismissible: true,
+          barrierColor: Colors.black.withOpacity(0.35),
+          builder: (_) => Stack(
+            children: <Widget>[
+              BadgeAwardDialog(
+                title: '레벨 업! Lv.$newLevel',
+                child: CustomPaint(painter: AwardStarPainter()),
+                onClose: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        );
+      }
       final String? badge = await _db.awardBadgeDaily5IfNeeded();
+      if (mounted) setState(() {}); // refresh header level chip
       if (badge != null && mounted) {
         showDialog<void>(
           context: context,
@@ -493,6 +516,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       // Sticker overlay moved to full screen, keep paper content clean
                                       const HeaderBar(),
+                                      Positioned(
+                                        top: 8,
+                                        right: 12,
+                                        child: FutureBuilder<(int, int, int)>(
+                                          future: _db.getPlayerLevelState(),
+                                          builder: (context, snapshot) {
+                                            final int level =
+                                                snapshot.data?.$1 ?? 1;
+                                            final int xp =
+                                                snapshot.data?.$2 ?? 0;
+                                            final int need =
+                                                snapshot.data?.$3 ?? 100;
+                                            return LevelChip(
+                                              level: level,
+                                              xp: xp,
+                                              need: need,
+                                            );
+                                          },
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
