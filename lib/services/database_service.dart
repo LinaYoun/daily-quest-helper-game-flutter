@@ -139,6 +139,31 @@ class DatabaseService {
     await _db.setAppState('lastWeeklyReset', currentKey);
   }
 
+  // Daily auto-reset if date changed
+  Future<void> resetDailyIfNeeded() async {
+    final String? last = await _db.getAppState('lastDailyReset');
+    final DateTime now = DateTime.now();
+    final DateTime keyDate = DateTime(now.year, now.month, now.day);
+    final String currentKey =
+        '${keyDate.year.toString().padLeft(4, '0')}-${keyDate.month.toString().padLeft(2, '0')}-${keyDate.day.toString().padLeft(2, '0')}';
+    if (last == currentKey) return;
+    final quests = await getAllQuests();
+    for (final q in quests) {
+      await _db.upsertQuest(
+        QuestsCompanion(
+          id: drift.Value(q.id),
+          title: drift.Value(q.title),
+          progress: const drift.Value(0),
+          target: drift.Value(q.target),
+          status: drift.Value('incomplete'),
+          iconUrl: drift.Value(q.iconUrl),
+          rewardUrl: drift.Value(q.rewardUrl),
+        ),
+      );
+    }
+    await _db.setAppState('lastDailyReset', currentKey);
+  }
+
   // Streak CRUD
   Future<int> insertStreakQuest(domain.Quest quest) async {
     await _db.upsertStreakQuest(
@@ -361,5 +386,96 @@ class DatabaseService {
       ),
     );
     return (itemId, key);
+  }
+
+  // Owned item count helpers
+  Future<void> decrementOwnedItem(int itemId) async {
+    final items = await _db.getAllOwnedItems();
+    final existing = items.where((e) => e.id == itemId).toList();
+    final int current = existing.isEmpty ? 0 : existing.first.count;
+    final String key = existing.isEmpty
+        ? (itemId == 1
+              ? 'star'
+              : itemId == 2
+              ? 'flower'
+              : itemId == 3
+              ? 'butterfly'
+              : 'bow')
+        : existing.first.key;
+    final int next = current > 0 ? current - 1 : 0;
+    await _db.upsertOwnedItem(
+      OwnedItemsCompanion(
+        id: drift.Value(itemId),
+        key: drift.Value(key),
+        count: drift.Value(next),
+      ),
+    );
+  }
+
+  Future<void> incrementOwnedItem(int itemId) async {
+    final items = await _db.getAllOwnedItems();
+    final existing = items.where((e) => e.id == itemId).toList();
+    final int current = existing.isEmpty ? 0 : existing.first.count;
+    final String key = existing.isEmpty
+        ? (itemId == 1
+              ? 'star'
+              : itemId == 2
+              ? 'flower'
+              : itemId == 3
+              ? 'butterfly'
+              : 'bow')
+        : existing.first.key;
+    await _db.upsertOwnedItem(
+      OwnedItemsCompanion(
+        id: drift.Value(itemId),
+        key: drift.Value(key),
+        count: drift.Value(current + 1),
+      ),
+    );
+  }
+
+  // Sticker placements persistence (daily screen)
+  Future<String?> getDailyStickerPlacements() async {
+    return _db.getAppState('stickers_daily_v1');
+  }
+
+  Future<void> setDailyStickerPlacements(String rawJson) async {
+    await _db.setAppState('stickers_daily_v1', rawJson);
+  }
+
+  // Weekly sticker placements persistence
+  Future<String?> getWeeklyStickerPlacements() async {
+    return _db.getAppState('stickers_weekly_v1');
+  }
+
+  Future<void> setWeeklyStickerPlacements(String rawJson) async {
+    await _db.setAppState('stickers_weekly_v1', rawJson);
+  }
+
+  // Streak sticker placements persistence
+  Future<String?> getStreakStickerPlacements() async {
+    return _db.getAppState('stickers_streak_v1');
+  }
+
+  Future<void> setStreakStickerPlacements(String rawJson) async {
+    await _db.setAppState('stickers_streak_v1', rawJson);
+  }
+
+  // Home (Main hub) sticker placements persistence
+  Future<String?> getHomeStickerPlacements() async {
+    return _db.getAppState('stickers_home_v1');
+  }
+
+  Future<void> setHomeStickerPlacements(String rawJson) async {
+    await _db.setAppState('stickers_home_v1', rawJson);
+  }
+
+  // Profile sticker placements persistence
+  Future<String?> getProfileStickerPlacements() async {
+    return _db.getAppState('stickers_profile_v1');
+  }
+
+  Future<void> setProfileStickerPlacements(String rawJson) async {
+    await _db.setAppState('stickers_profile_v1', rawJson);
   }
 }

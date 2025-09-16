@@ -9,6 +9,7 @@ import 'quest_icon_painter.dart';
 import 'owned_item_painters.dart';
 import 'services/database_service.dart';
 import 'badge_painters.dart';
+import 'services/background_audio_service.dart';
 
 // Custom quest icons with colorful style
 class QuestGlyph extends StatelessWidget {
@@ -339,21 +340,141 @@ class CornerDecoration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      width: 64,
+      height: 64,
       decoration: BoxDecoration(
-        color: colorAccent,
-        borderRadius: BorderRadius.circular(10),
+        color: const Color(0xFFF6EED6),
+        shape: BoxShape.circle,
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(color: const Color(0xFFBE9E6A), width: 4),
       ),
-      child: const Text(
-        '?',
-        style: TextStyle(
-          color: colorPaper,
-          fontWeight: FontWeight.w700,
-          fontSize: 20,
+      child: Center(
+        child: SizedBox(
+          width: 52,
+          height: 52,
+          child: CustomPaint(painter: _HelpCornerPainter()),
         ),
       ),
     );
   }
+}
+
+class _HelpCornerPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+    final Offset c = Offset(w / 2, h / 2);
+
+    // Soft vignette background
+    final Rect full = Offset.zero & size;
+    final Paint bg = Paint()
+      ..shader = RadialGradient(
+        colors: const [Color(0xFF6B5644), Color(0xFF5C4A3A)],
+      ).createShader(full);
+    canvas.drawRect(full, bg);
+
+    // Glow
+    final Paint glow = Paint()
+      ..color = const Color(0xFFFFE89A).withOpacity(0.55)
+      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 8);
+    canvas.drawCircle(c, h * 0.34, glow);
+
+    Path buildStar(Offset center, double rOuter, double rInner) {
+      final Path p = Path();
+      for (int i = 0; i < 10; i++) {
+        final double a = (-90 + i * 36) * math.pi / 180.0;
+        final double rr = (i % 2 == 0) ? rOuter : rInner;
+        final Offset pt = Offset(
+          center.dx + rr * math.cos(a),
+          center.dy + rr * math.sin(a),
+        );
+        if (i == 0) {
+          p.moveTo(pt.dx, pt.dy);
+        } else {
+          p.lineTo(pt.dx, pt.dy);
+        }
+      }
+      p.close();
+      return p;
+    }
+
+    final double rO = h * 0.28;
+    final double rI = rO * 0.48;
+
+    // Outer white stroke star
+    final Path outer = buildStar(c, rO, rI);
+    canvas.drawPath(
+      outer,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = h * 0.11
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..color = Colors.white.withOpacity(0.95),
+    );
+
+    // Middle band (soft yellow)
+    final Path middle = buildStar(c, rO * 0.86, rI * 0.86);
+    canvas.drawPath(
+      middle,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = h * 0.06
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..color = const Color(0xFFF7E08A),
+    );
+
+    // Inner star fill + stroke
+    final Path inner = buildStar(c, rO * 0.52, rI * 0.52);
+    canvas.drawPath(
+      inner,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..shader = RadialGradient(
+          colors: const [Color(0xFFFFF2C9), Color(0xFFF3D874)],
+        ).createShader(full),
+    );
+    canvas.drawPath(
+      inner,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = h * 0.02
+        ..color = const Color(0xFFD9B85A),
+    );
+
+    // Sparkles (diamonds and dots)
+    void diamond(Offset o, double s) {
+      final Path d = Path()
+        ..moveTo(o.dx, o.dy - s)
+        ..lineTo(o.dx + s, o.dy)
+        ..lineTo(o.dx, o.dy + s)
+        ..lineTo(o.dx - s, o.dy)
+        ..close();
+      canvas.drawPath(d, Paint()..color = const Color(0xFFFFE59A));
+    }
+
+    void dot(Offset o, double r) {
+      canvas.drawCircle(o, r, Paint()..color = const Color(0xFFFFE59A));
+    }
+
+    diamond(c.translate(-w * 0.22, -h * 0.22), h * 0.055);
+    diamond(c.translate(w * 0.24, -h * 0.14), h * 0.045);
+    dot(c.translate(-w * 0.28, h * 0.10), h * 0.028);
+    dot(c.translate(w * 0.28, h * 0.16), h * 0.026);
+    dot(c.translate(0, -h * 0.30), h * 0.020);
+    dot(c.translate(-w * 0.10, -h * 0.28), h * 0.018);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class ProfileScreen extends StatefulWidget {
@@ -366,6 +487,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final DatabaseService _db = DatabaseService();
   Map<int, int> _counts = const {1: 0, 2: 0, 3: 0, 4: 0};
 
+  // Sticker state (profile)
+  final GlobalKey _rootKey = GlobalKey();
+  bool _showStickerPanel = false;
+  static const double _stickerSize = 40.0;
+  List<_ProfileStickerPlacement> _stickers = <_ProfileStickerPlacement>[];
+
   @override
   void initState() {
     super.initState();
@@ -374,8 +501,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _load() async {
     final c = await _db.getOwnedItemCounts();
+    final String? raw = await _db.getProfileStickerPlacements();
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final List<dynamic> list = jsonDecode(raw) as List<dynamic>;
+        _stickers = list
+            .map(
+              (e) =>
+                  _ProfileStickerPlacement.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
+      } catch (_) {}
+    }
     if (!mounted) return;
     setState(() => _counts = c);
+  }
+
+  Future<void> _savePlacements() async {
+    final String raw = jsonEncode(_stickers.map((e) => e.toJson()).toList());
+    await _db.setProfileStickerPlacements(raw);
+  }
+
+  void _toggleStickerPanel() {
+    setState(() => _showStickerPanel = !_showStickerPanel);
+  }
+
+  Widget _buildStickerGraphic(int itemId, {double size = _stickerSize}) {
+    switch (itemId) {
+      case 1:
+        return SizedBox(
+          width: size,
+          height: size,
+          child: CustomPaint(painter: ItemStarPainter()),
+        );
+      case 2:
+        return SizedBox(
+          width: size,
+          height: size,
+          child: CustomPaint(painter: ItemFlowerPainter()),
+        );
+      case 3:
+        return SizedBox(
+          width: size,
+          height: size,
+          child: CustomPaint(painter: ItemButterflyPainter()),
+        );
+      default:
+        return SizedBox(
+          width: size,
+          height: size,
+          child: CustomPaint(painter: ItemBowPainter()),
+        );
+    }
+  }
+
+  void _moveSticker(String id, Offset delta, Size rootSize) {
+    final int idx = _stickers.indexWhere((s) => s.id == id);
+    if (idx == -1) return;
+    final _ProfileStickerPlacement s = _stickers[idx];
+    final double nx = (s.fx * rootSize.width + delta.dx) / rootSize.width;
+    final double ny = (s.fy * rootSize.height + delta.dy) / rootSize.height;
+    setState(() {
+      _stickers[idx] = s.copyWith(
+        fx: nx.clamp(0.0, 1.0),
+        fy: ny.clamp(0.0, 1.0),
+      );
+    });
+    _savePlacements();
+  }
+
+  Future<void> _deleteSticker(String id) async {
+    final int idx = _stickers.indexWhere((s) => s.id == id);
+    if (idx == -1) return;
+    final _ProfileStickerPlacement s = _stickers[idx];
+    final bool? ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.35),
+      builder: (_) => Stack(
+        children: <Widget>[
+          DeleteConfirmDialog(
+            title: '이 스티커를 삭제할까요?',
+            onCancel: () => Navigator.of(context).pop(false),
+            onConfirm: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() {
+      _stickers.removeAt(idx);
+      _counts[s.itemId] = (_counts[s.itemId] ?? 0) + 1;
+    });
+    await _db.incrementOwnedItem(s.itemId);
+    await _savePlacements();
+  }
+
+  void _handleAddStickerFromPanel(int itemId, Offset globalDropPosition) async {
+    final RenderBox? rootBox =
+        _rootKey.currentContext?.findRenderObject() as RenderBox?;
+    if (rootBox == null) return;
+    final Offset topLeft = rootBox.localToGlobal(Offset.zero);
+    final Size rootSize = rootBox.size;
+    final Offset local = globalDropPosition - topLeft;
+    final Offset centered = local.translate(
+      -_stickerSize / 2,
+      -_stickerSize / 2,
+    );
+    if (centered.dx < 0 ||
+        centered.dy < 0 ||
+        centered.dx > rootSize.width ||
+        centered.dy > rootSize.height) {
+      return;
+    }
+    final double fx = (centered.dx / rootSize.width).clamp(0.0, 1.0);
+    final double fy = (centered.dy / rootSize.height).clamp(0.0, 1.0);
+    if ((_counts[itemId] ?? 0) <= 0) return;
+    setState(() {
+      _stickers.add(
+        _ProfileStickerPlacement(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          itemId: itemId,
+          fx: fx,
+          fy: fy,
+        ),
+      );
+      _counts[itemId] = (_counts[itemId] ?? 0) - 1;
+    });
+    await _db.decrementOwnedItem(itemId);
+    await _savePlacements();
   }
 
   @override
@@ -384,6 +638,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: colorBackground,
       body: SafeArea(
         child: Stack(
+          key: _rootKey,
           children: <Widget>[
             const Positioned.fill(child: PatternBackground()),
             Center(
@@ -441,6 +696,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
+            // Sticker overlay behind buttons
+            Positioned.fill(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final Size rootSize = Size(
+                    constraints.maxWidth,
+                    constraints.maxHeight,
+                  );
+                  return Stack(
+                    children: _stickers.map((s) {
+                      final double left = s.fx * rootSize.width;
+                      final double top = s.fy * rootSize.height;
+                      return Positioned(
+                        left: left,
+                        top: top,
+                        child: GestureDetector(
+                          onPanUpdate: (d) =>
+                              _moveSticker(s.id, d.delta, rootSize),
+                          onLongPress: () => _deleteSticker(s.id),
+                          child: _buildStickerGraphic(s.itemId),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              top: 16,
+              left: 16,
+              child: GestureDetector(
+                onTap: _toggleStickerPanel,
+                child: const CornerDecoration(),
+              ),
+            ),
+            if (_showStickerPanel)
+              Positioned(
+                top: 16,
+                left: 16 + 56,
+                child: _ProfileStickerPanel(
+                  width: 220,
+                  counts: _counts,
+                  stickerSize: _stickerSize,
+                  itemBuilder: (itemId) => Draggable<int>(
+                    data: itemId,
+                    feedback: Material(
+                      color: Colors.transparent,
+                      child: _buildStickerGraphic(itemId, size: _stickerSize),
+                    ),
+                    childWhenDragging: Opacity(
+                      opacity: 0.4,
+                      child: _buildStickerGraphic(itemId, size: _stickerSize),
+                    ),
+                    onDragEnd: (details) {
+                      _handleAddStickerFromPanel(itemId, details.offset);
+                    },
+                    child: _buildStickerGraphic(itemId, size: _stickerSize),
+                  ),
+                  onClose: _toggleStickerPanel,
+                ),
+              ),
             Positioned(
               bottom: 16,
               left: 16,
@@ -482,6 +798,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
+            Positioned(bottom: 16, right: 16, child: _MuteButton()),
             const Positioned(
               top: 12,
               right: 12,
@@ -1703,6 +2020,48 @@ class BadgeAwardDialog extends StatelessWidget {
   }
 }
 
+class _MuteButton extends StatefulWidget {
+  @override
+  State<_MuteButton> createState() => _MuteButtonState();
+}
+
+class _MuteButtonState extends State<_MuteButton> {
+  bool _muted = BackgroundAudioService().isMuted;
+
+  Future<void> _toggle() async {
+    await BackgroundAudioService().toggleMute();
+    if (!mounted) return;
+    setState(() => _muted = BackgroundAudioService().isMuted);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _toggle,
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF6EED6),
+          shape: BoxShape.circle,
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(color: const Color(0xFFBE9E6A), width: 4),
+        ),
+        child: Icon(
+          _muted ? Icons.volume_off : Icons.volume_up,
+          color: colorText,
+        ),
+      ),
+    );
+  }
+}
+
 // Lightweight award painters used by ItemAwardDialog
 class AwardStarPainter extends CustomPainter {
   @override
@@ -2219,6 +2578,183 @@ class _PaperField extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ProfileStickerPanel extends StatelessWidget {
+  const _ProfileStickerPanel({
+    required this.width,
+    required this.counts,
+    required this.stickerSize,
+    required this.itemBuilder,
+    required this.onClose,
+  });
+  final double width;
+  final Map<int, int> counts;
+  final double stickerSize;
+  final Widget Function(int itemId) itemBuilder;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: const DashedRRectPainter(
+        strokeColor: kCardStroke,
+        fillColor: kCardFill,
+        radius: 18,
+      ),
+      child: Container(
+        width: width,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const <Widget>[
+                Text(
+                  '스티커 붙이기',
+                  style: TextStyle(
+                    color: colorText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _ProfilePanelItemRow(
+              label: '별 x',
+              count: counts[1] ?? 0,
+              stickerSize: stickerSize,
+              child: itemBuilder(1),
+            ),
+            _ProfilePanelItemRow(
+              label: '화분 x',
+              count: counts[2] ?? 0,
+              stickerSize: stickerSize,
+              child: itemBuilder(2),
+            ),
+            _ProfilePanelItemRow(
+              label: '나비 x',
+              count: counts[3] ?? 0,
+              stickerSize: stickerSize,
+              child: itemBuilder(3),
+            ),
+            _ProfilePanelItemRow(
+              label: '리본 x',
+              count: counts[4] ?? 0,
+              stickerSize: stickerSize,
+              child: itemBuilder(4),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  elevation: 4,
+                  minimumSize: const Size(64, 32),
+                ),
+                onPressed: onClose,
+                child: const Text(
+                  '닫기',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfilePanelItemRow extends StatelessWidget {
+  const _ProfilePanelItemRow({
+    required this.label,
+    required this.count,
+    required this.stickerSize,
+    required this.child,
+  });
+  final String label;
+  final int count;
+  final double stickerSize;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: count > 0 ? 1.0 : 0.4,
+      child: Row(
+        children: <Widget>[
+          SizedBox(
+            width: 60,
+            child: Text(
+              '$label$count',
+              style: const TextStyle(
+                color: colorText,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(width: stickerSize, height: stickerSize, child: child),
+        ],
+      ),
+    );
+  }
+}
+
+@immutable
+class _ProfileStickerPlacement {
+  const _ProfileStickerPlacement({
+    required this.id,
+    required this.itemId,
+    required this.fx,
+    required this.fy,
+  });
+  final String id;
+  final int itemId;
+  final double fx;
+  final double fy;
+
+  _ProfileStickerPlacement copyWith({
+    String? id,
+    int? itemId,
+    double? fx,
+    double? fy,
+  }) {
+    return _ProfileStickerPlacement(
+      id: id ?? this.id,
+      itemId: itemId ?? this.itemId,
+      fx: fx ?? this.fx,
+      fy: fy ?? this.fy,
+    );
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'itemId': itemId,
+    'fx': fx,
+    'fy': fy,
+  };
+
+  factory _ProfileStickerPlacement.fromJson(Map<String, dynamic> m) {
+    return _ProfileStickerPlacement(
+      id: m['id'] as String,
+      itemId: m['itemId'] as int,
+      fx: (m['fx'] as num).toDouble(),
+      fy: (m['fy'] as num).toDouble(),
     );
   }
 }

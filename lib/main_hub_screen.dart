@@ -8,6 +8,8 @@ import 'services/database_service.dart';
 import 'weekly_screens.dart';
 import 'streak_screens.dart';
 import 'services/background_audio_service.dart';
+import 'owned_item_painters.dart';
+import 'dart:convert';
 
 class MainHubScreen extends StatefulWidget {
   const MainHubScreen({super.key});
@@ -24,14 +26,23 @@ class _MainHubScreenState extends State<MainHubScreen> {
   int _streakDays = 0; // TODO: compute real streak when available
   Map<int, int> _ownedCounts = const {1: 0, 2: 0, 3: 0, 4: 0};
 
+  // Sticker state (home)
+  final GlobalKey _rootKey = GlobalKey();
+  bool _showStickerPanel = false;
+  List<_HomeStickerPlacement> _stickers = <_HomeStickerPlacement>[];
+  static const double _stickerSize = 40.0;
+
   @override
   void initState() {
     super.initState();
     _loadCounts();
+    _loadStickersAndCounts();
   }
 
   Future<void> _loadCounts() async {
     try {
+      // Ensure daily quests are reset when the app opens or returns here
+      await _db.resetDailyIfNeeded();
       final List<Quest> quests = await _db.getAllQuests();
       final List<Quest> weekly = await _db.getAllWeeklyQuests();
       final (int streakDays, String? lastResetYmd, String? lastCompletionYmd) =
@@ -56,6 +67,140 @@ class _MainHubScreenState extends State<MainHubScreen> {
         _streakDays = 0;
         _ownedCounts = const {1: 0, 2: 0, 3: 0, 4: 0};
       });
+    }
+  }
+
+  Future<void> _loadStickersAndCounts() async {
+    try {
+      _ownedCounts = await _db.getOwnedItemCounts();
+      final String? raw = await _db.getHomeStickerPlacements();
+      if (raw != null && raw.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(raw) as List<dynamic>;
+        _stickers = list
+            .map(
+              (e) => _HomeStickerPlacement.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
+      }
+      if (mounted) setState(() {});
+    } catch (_) {}
+  }
+
+  Future<void> _savePlacements() async {
+    final String raw = jsonEncode(_stickers.map((e) => e.toJson()).toList());
+    await _db.setHomeStickerPlacements(raw);
+  }
+
+  void _toggleStickerPanel() {
+    setState(() => _showStickerPanel = !_showStickerPanel);
+  }
+
+  void _handleAddStickerFromPanel(int itemId, Offset globalDropPosition) async {
+    final RenderBox? rootBox =
+        _rootKey.currentContext?.findRenderObject() as RenderBox?;
+    if (rootBox == null) return;
+    final Offset topLeft = rootBox.localToGlobal(Offset.zero);
+    final Size rootSize = rootBox.size;
+
+    final Offset local = globalDropPosition - topLeft;
+    final Offset centered = local.translate(
+      -_stickerSize / 2,
+      -_stickerSize / 2,
+    );
+    if (centered.dx < 0 ||
+        centered.dy < 0 ||
+        centered.dx > rootSize.width ||
+        centered.dy > rootSize.height) {
+      return;
+    }
+    final double fx = (centered.dx / rootSize.width).clamp(0.0, 1.0);
+    final double fy = (centered.dy / rootSize.height).clamp(0.0, 1.0);
+
+    if ((_ownedCounts[itemId] ?? 0) <= 0) return;
+
+    setState(() {
+      _stickers.add(
+        _HomeStickerPlacement(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          itemId: itemId,
+          fx: fx,
+          fy: fy,
+        ),
+      );
+      _ownedCounts[itemId] = (_ownedCounts[itemId] ?? 0) - 1;
+    });
+    await _db.decrementOwnedItem(itemId);
+    await _savePlacements();
+  }
+
+  void _moveSticker(String id, Offset delta, Size rootSize) {
+    final int idx = _stickers.indexWhere((s) => s.id == id);
+    if (idx == -1) return;
+    final _HomeStickerPlacement s = _stickers[idx];
+    final double nx = (s.fx * rootSize.width + delta.dx) / rootSize.width;
+    final double ny = (s.fy * rootSize.height + delta.dy) / rootSize.height;
+    setState(() {
+      _stickers[idx] = s.copyWith(
+        fx: nx.clamp(0.0, 1.0),
+        fy: ny.clamp(0.0, 1.0),
+      );
+    });
+    _savePlacements();
+  }
+
+  Future<void> _deleteSticker(String id) async {
+    final int idx = _stickers.indexWhere((s) => s.id == id);
+    if (idx == -1) return;
+    final _HomeStickerPlacement s = _stickers[idx];
+    final bool? ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.35),
+      builder: (_) => Stack(
+        children: <Widget>[
+          DeleteConfirmDialog(
+            title: '이 스티커를 삭제할까요?',
+            onCancel: () => Navigator.of(context).pop(false),
+            onConfirm: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() {
+      _stickers.removeAt(idx);
+      _ownedCounts[s.itemId] = (_ownedCounts[s.itemId] ?? 0) + 1;
+    });
+    await _db.incrementOwnedItem(s.itemId);
+    await _savePlacements();
+  }
+
+  Widget _buildStickerGraphic(int itemId, {double size = _stickerSize}) {
+    switch (itemId) {
+      case 1:
+        return SizedBox(
+          width: size,
+          height: size,
+          child: CustomPaint(painter: ItemStarPainter()),
+        );
+      case 2:
+        return SizedBox(
+          width: size,
+          height: size,
+          child: CustomPaint(painter: ItemFlowerPainter()),
+        );
+      case 3:
+        return SizedBox(
+          width: size,
+          height: size,
+          child: CustomPaint(painter: ItemButterflyPainter()),
+        );
+      default:
+        return SizedBox(
+          width: size,
+          height: size,
+          child: CustomPaint(painter: ItemBowPainter()),
+        );
     }
   }
 
@@ -97,6 +242,7 @@ class _MainHubScreenState extends State<MainHubScreen> {
       backgroundColor: colorBackground,
       body: SafeArea(
         child: Stack(
+          key: _rootKey,
           children: <Widget>[
             const Positioned.fill(child: PatternBackground()),
             Center(
@@ -162,6 +308,67 @@ class _MainHubScreenState extends State<MainHubScreen> {
                 ),
               ),
             ),
+            // Sticker overlay behind panels and badges
+            Positioned.fill(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final Size rootSize = Size(
+                    constraints.maxWidth,
+                    constraints.maxHeight,
+                  );
+                  return Stack(
+                    children: _stickers.map((s) {
+                      final double left = s.fx * rootSize.width;
+                      final double top = s.fy * rootSize.height;
+                      return Positioned(
+                        left: left,
+                        top: top,
+                        child: GestureDetector(
+                          onPanUpdate: (d) =>
+                              _moveSticker(s.id, d.delta, rootSize),
+                          onLongPress: () => _deleteSticker(s.id),
+                          child: _buildStickerGraphic(s.itemId),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              top: 16,
+              left: 16,
+              child: GestureDetector(
+                onTap: _toggleStickerPanel,
+                child: const CornerDecoration(),
+              ),
+            ),
+            if (_showStickerPanel)
+              Positioned(
+                top: 16,
+                left: 16 + 56,
+                child: HomeStickerPanel(
+                  width: 220,
+                  counts: _ownedCounts,
+                  stickerSize: _stickerSize,
+                  itemBuilder: (itemId) => Draggable<int>(
+                    data: itemId,
+                    feedback: Material(
+                      color: Colors.transparent,
+                      child: _buildStickerGraphic(itemId, size: _stickerSize),
+                    ),
+                    childWhenDragging: Opacity(
+                      opacity: 0.4,
+                      child: _buildStickerGraphic(itemId, size: _stickerSize),
+                    ),
+                    onDragEnd: (details) {
+                      _handleAddStickerFromPanel(itemId, details.offset);
+                    },
+                    child: _buildStickerGraphic(itemId, size: _stickerSize),
+                  ),
+                  onClose: _toggleStickerPanel,
+                ),
+              ),
             const Positioned(
               top: 12,
               right: 12,
@@ -1030,4 +1237,181 @@ class BowItemPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) => _BowItemPainter().paint(canvas, size);
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+@immutable
+class _HomeStickerPlacement {
+  const _HomeStickerPlacement({
+    required this.id,
+    required this.itemId,
+    required this.fx,
+    required this.fy,
+  });
+  final String id;
+  final int itemId;
+  final double fx;
+  final double fy;
+
+  _HomeStickerPlacement copyWith({
+    String? id,
+    int? itemId,
+    double? fx,
+    double? fy,
+  }) {
+    return _HomeStickerPlacement(
+      id: id ?? this.id,
+      itemId: itemId ?? this.itemId,
+      fx: fx ?? this.fx,
+      fy: fy ?? this.fy,
+    );
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'itemId': itemId,
+    'fx': fx,
+    'fy': fy,
+  };
+
+  factory _HomeStickerPlacement.fromJson(Map<String, dynamic> m) {
+    return _HomeStickerPlacement(
+      id: m['id'] as String,
+      itemId: m['itemId'] as int,
+      fx: (m['fx'] as num).toDouble(),
+      fy: (m['fy'] as num).toDouble(),
+    );
+  }
+}
+
+class HomeStickerPanel extends StatelessWidget {
+  const HomeStickerPanel({
+    required this.width,
+    required this.counts,
+    required this.stickerSize,
+    required this.itemBuilder,
+    required this.onClose,
+  });
+  final double width;
+  final Map<int, int> counts;
+  final double stickerSize;
+  final Widget Function(int itemId) itemBuilder;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: const DashedRRectPainter(
+        strokeColor: kCardStroke,
+        fillColor: kCardFill,
+        radius: 18,
+      ),
+      child: Container(
+        width: width,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const <Widget>[
+                Text(
+                  '스티커 붙이기',
+                  style: TextStyle(
+                    color: colorText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _HomePanelItemRow(
+              label: '별 x',
+              count: counts[1] ?? 0,
+              stickerSize: stickerSize,
+              child: itemBuilder(1),
+            ),
+            _HomePanelItemRow(
+              label: '화분 x',
+              count: counts[2] ?? 0,
+              stickerSize: stickerSize,
+              child: itemBuilder(2),
+            ),
+            _HomePanelItemRow(
+              label: '나비 x',
+              count: counts[3] ?? 0,
+              stickerSize: stickerSize,
+              child: itemBuilder(3),
+            ),
+            _HomePanelItemRow(
+              label: '리본 x',
+              count: counts[4] ?? 0,
+              stickerSize: stickerSize,
+              child: itemBuilder(4),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  elevation: 4,
+                  minimumSize: const Size(64, 32),
+                ),
+                onPressed: onClose,
+                child: const Text(
+                  '닫기',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomePanelItemRow extends StatelessWidget {
+  const _HomePanelItemRow({
+    required this.label,
+    required this.count,
+    required this.stickerSize,
+    required this.child,
+  });
+  final String label;
+  final int count;
+  final double stickerSize;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: count > 0 ? 1.0 : 0.4,
+      child: Row(
+        children: <Widget>[
+          SizedBox(
+            width: 60,
+            child: Text(
+              '$label$count',
+              style: const TextStyle(
+                color: colorText,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(width: stickerSize, height: stickerSize, child: child),
+        ],
+      ),
+    );
+  }
 }

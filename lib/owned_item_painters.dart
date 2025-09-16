@@ -178,21 +178,22 @@ class ItemFlowerPainter extends CustomPainter {
 
     Path leafPath(Offset c, bool left) {
       final double dir = left ? -1 : 1;
+      final double s = size.shortestSide;
       final Path p = Path()
         ..moveTo(c.dx, c.dy)
         ..cubicTo(
-          c.dx + dir * 26,
-          c.dy - 12,
-          c.dx + dir * 36,
-          c.dy + 18,
-          c.dx + dir * 12,
-          c.dy + 26,
+          c.dx + dir * (s * 0.11),
+          c.dy - (s * 0.05),
+          c.dx + dir * (s * 0.15),
+          c.dy + (s * 0.09),
+          c.dx + dir * (s * 0.07),
+          c.dy + (s * 0.13),
         )
         ..cubicTo(
-          c.dx + dir * 2,
-          c.dy + 30,
-          c.dx - dir * 6,
-          c.dy + 16,
+          c.dx + dir * (s * 0.015),
+          c.dy + (s * 0.12),
+          c.dx - dir * (s * 0.04),
+          c.dy + (s * 0.07),
           c.dx,
           c.dy,
         )
@@ -214,14 +215,14 @@ class ItemFlowerPainter extends CustomPainter {
       Paint()
         ..color = strokeBrown
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.6,
+        ..strokeWidth = 1.4,
     );
     canvas.drawPath(
       leafPath(Offset(leafCenter.dx + 10, leafCenter.dy), false),
       Paint()
         ..color = strokeBrown
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.6,
+        ..strokeWidth = 1.4,
     );
 
     final double petalR = w * 0.13;
@@ -279,6 +280,8 @@ class ItemButterflyPainter extends CustomPainter {
     const Color bodyDark = Color(0xFF6B4E3A);
     const Color spot = Color(0xFFF6F6F6);
 
+    final Color outlineLight = Colors.white; // contrast halo
+
     Paint wingFill(Rect r) => Paint()
       ..shader = RadialGradient(
         colors: const [wingLight, wingMid, wingDark],
@@ -299,6 +302,14 @@ class ItemButterflyPainter extends CustomPainter {
 
     final RRect lu = wingOval(Offset(c.dx - wingOX, c.dy - wingOY), upperWing);
     canvas.drawRRect(lu, wingFill(lu.outerRect));
+    // light halo then dark stroke
+    canvas.drawRRect(
+      lu,
+      Paint()
+        ..color = outlineLight
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.0,
+    );
     canvas.drawRRect(
       lu,
       Paint()
@@ -315,6 +326,13 @@ class ItemButterflyPainter extends CustomPainter {
     canvas.drawRRect(
       ll,
       Paint()
+        ..color = outlineLight
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.0,
+    );
+    canvas.drawRRect(
+      ll,
+      Paint()
         ..color = strokeBrown
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.2,
@@ -322,6 +340,13 @@ class ItemButterflyPainter extends CustomPainter {
 
     final RRect ru = wingOval(Offset(c.dx + wingOX, c.dy - wingOY), upperWing);
     canvas.drawRRect(ru, wingFill(ru.outerRect));
+    canvas.drawRRect(
+      ru,
+      Paint()
+        ..color = outlineLight
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.0,
+    );
     canvas.drawRRect(
       ru,
       Paint()
@@ -335,6 +360,13 @@ class ItemButterflyPainter extends CustomPainter {
       lowerWing,
     );
     canvas.drawRRect(rl, wingFill(rl.outerRect));
+    canvas.drawRRect(
+      rl,
+      Paint()
+        ..color = outlineLight
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.0,
+    );
     canvas.drawRRect(
       rl,
       Paint()
@@ -353,17 +385,39 @@ class ItemButterflyPainter extends CustomPainter {
       Radius.circular(w * 0.04),
     );
     canvas.drawRRect(body, Paint()..color = bodyDark);
+    canvas.drawRRect(
+      body,
+      Paint()
+        ..color = outlineLight
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0,
+    );
     canvas.drawCircle(
       Offset(c.dx, bodyRect.top - h * 0.02),
       w * 0.04,
       Paint()..color = bodyDark,
     );
+    canvas.drawCircle(
+      Offset(c.dx, bodyRect.top - h * 0.02),
+      w * 0.04,
+      Paint()
+        ..color = outlineLight
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0,
+    );
+
+    final Paint antLight = Paint()
+      ..color = outlineLight
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.4
+      ..strokeCap = StrokeCap.round;
 
     final Paint ant = Paint()
       ..color = strokeBrown
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
       ..strokeCap = StrokeCap.round;
+
     final Path al = Path()
       ..moveTo(c.dx, bodyRect.top - h * 0.02)
       ..cubicTo(
@@ -384,6 +438,9 @@ class ItemButterflyPainter extends CustomPainter {
         c.dx + w * 0.11,
         bodyRect.top - h * 0.12,
       );
+    // draw halo then antenna
+    canvas.drawPath(al, antLight);
+    canvas.drawPath(ar, antLight);
     canvas.drawPath(al, ant);
     canvas.drawPath(ar, ant);
 
@@ -440,6 +497,7 @@ class ItemBowPainter extends CustomPainter {
     const Color bowLight = Color(0xFFF1A29A);
     const Color bowMid = Color(0xFFE07D73);
     const Color bowDark = Color(0xFFCC6B60);
+    final Color outlineLight = Colors.white;
 
     Paint fillFor(Path path) {
       final Rect r = path.getBounds();
@@ -520,6 +578,14 @@ class ItemBowPainter extends CustomPainter {
       canvas.drawPath(
         p,
         Paint()
+          ..color = outlineLight
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 4.0
+          ..strokeJoin = StrokeJoin.round,
+      );
+      canvas.drawPath(
+        p,
+        Paint()
           ..color = strokeBrown
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.2
@@ -532,6 +598,13 @@ class ItemBowPainter extends CustomPainter {
         ..shader = LinearGradient(
           colors: const [bowLight, bowDark],
         ).createShader(knot.outerRect),
+    );
+    canvas.drawRRect(
+      knot,
+      Paint()
+        ..color = outlineLight
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.0,
     );
     canvas.drawRRect(
       knot,
@@ -560,6 +633,37 @@ class ItemBowPainter extends CustomPainter {
     );
   }
 
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Public wrappers to reuse item drawings in other files (e.g., award dialog)
+class StarItemPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) => ItemStarPainter().paint(canvas, size);
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class FlowerItemPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) =>
+      ItemFlowerPainter().paint(canvas, size);
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class ButterflyItemPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) =>
+      ItemButterflyPainter().paint(canvas, size);
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class BowItemPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) => ItemBowPainter().paint(canvas, size);
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

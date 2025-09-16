@@ -8,6 +8,7 @@ class BackgroundAudioService {
 
   final AudioPlayer _player = AudioPlayer();
   bool _initialized = false;
+  bool _muted = false;
 
   Future<void> initializeAndPlay() async {
     if (_initialized) return;
@@ -32,5 +33,16 @@ class BackgroundAudioService {
   Future<void> dispose() async {
     await _player.stop();
     await _player.dispose();
+  }
+
+  bool get isMuted => _muted;
+
+  Future<void> toggleMute() async {
+    _muted = !_muted;
+    if (_muted) {
+      await _player.setVolume(0.0);
+    } else {
+      await _player.setVolume(0.5);
+    }
   }
 }
