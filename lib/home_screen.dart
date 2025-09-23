@@ -48,7 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadAssets() async {
     _loadingMessage.value = 'Loading your daily quests...';
-    await Future<void>.delayed(const Duration(milliseconds: 300));
     _characterUrl.value = null; // Add local asset if available
     // Load quests from SQLite (works across platforms via main.dart factory)
     try {

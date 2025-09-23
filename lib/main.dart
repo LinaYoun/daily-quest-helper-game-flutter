@@ -5,13 +5,24 @@ import 'main_hub_screen.dart';
 import 'services/background_audio_service.dart';
 import 'package:flutter/foundation.dart';
 
+bool _isAutomatedTestEnvironment() {
+  final String bindingType = WidgetsBinding.instance.runtimeType.toString();
+  // Covers: TestWidgetsFlutterBinding, LiveTestWidgetsFlutterBinding,
+  // IntegrationTestWidgetsFlutterBinding (without importing the package)
+  const bool envFlag = bool.fromEnvironment(
+    'FLUTTER_TEST',
+    defaultValue: false,
+  );
+  return bindingType.contains('Test') || envFlag;
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations(<DeviceOrientation>[
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
-  if (!kIsWeb) {
+  if (!kIsWeb && !_isAutomatedTestEnvironment()) {
     await BackgroundAudioService().initializeAndPlay();
   }
   runApp(const DailyQuestApp());

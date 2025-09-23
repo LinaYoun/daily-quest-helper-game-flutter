@@ -265,15 +265,18 @@ class _WeeklyHomeScreenState extends State<WeeklyHomeScreen> {
                             Padding(
                               padding: const EdgeInsets.fromLTRB(
                                 16,
-                                64,
+                                56,
                                 16,
-                                80,
+                                16,
                               ),
                               child: ValueListenableBuilder<List<Quest>>(
                                 valueListenable: _quests,
-                                builder: (context, quests, _) => QuestGridView(
-                                  quests: quests,
-                                  emptyMessage: '주간 임무를 등록하세요',
+                                builder: (context, quests, _) => Column(
+                                  children: <Widget>[
+                                    Expanded(
+                                      child: QuestGridView(
+                                        quests: quests,
+                                        emptyMessage: '주간 임무를 등록하세요',
                                   onDelete: (id) async {
                                     final bool?
                                     actionDelete = await showDialog<bool>(
@@ -356,8 +359,9 @@ class _WeeklyHomeScreenState extends State<WeeklyHomeScreen> {
                                     final Quest q = current.firstWhere(
                                       (e) => e.id == id,
                                     );
-                                    if (q.status == QuestStatus.completed)
+                                    if (q.status == QuestStatus.completed) {
                                       return;
+                                    }
 
                                     final int newProgress = (q.progress + 1)
                                         .clamp(0, q.target);
@@ -433,6 +437,9 @@ class _WeeklyHomeScreenState extends State<WeeklyHomeScreen> {
                                         .getAllWeeklyQuests();
                                     if (mounted) setState(() {});
                                   },
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
