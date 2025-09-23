@@ -290,17 +290,18 @@ class _StreakHomeScreenState extends State<StreakHomeScreen> {
                             Padding(
                               padding: const EdgeInsets.fromLTRB(
                                 16,
-                                64,
+                                56,
                                 16,
-                                80,
+                                16,
                               ),
-                              child: SizedBox(
-                                height: 520,
-                                child: ValueListenableBuilder<List<Quest>>(
-                                  valueListenable: _quests,
-                                  builder: (context, quests, _) => QuestGridView(
-                                    quests: quests,
-                                    emptyMessage: '연속 임무를 등록하세요',
+                              child: ValueListenableBuilder<List<Quest>>(
+                                valueListenable: _quests,
+                                builder: (context, quests, _) => Column(
+                                  children: <Widget>[
+                                    Expanded(
+                                      child: QuestGridView(
+                                        quests: quests,
+                                        emptyMessage: '연속 임무를 등록하세요',
                                     onDelete: (id) async {
                                       final bool? actionDelete =
                                           await showDialog<bool>(
@@ -387,8 +388,9 @@ class _StreakHomeScreenState extends State<StreakHomeScreen> {
                                       final Quest q = current.firstWhere(
                                         (e) => e.id == id,
                                       );
-                                      if (q.status == QuestStatus.completed)
+                                      if (q.status == QuestStatus.completed) {
                                         return;
+                                      }
                                       final int newProgress = (q.progress + 1)
                                           .clamp(0, q.target);
                                       if (newProgress >= q.target) {
@@ -500,7 +502,9 @@ class _StreakHomeScreenState extends State<StreakHomeScreen> {
                                           .getAllStreakQuests();
                                       if (mounted) setState(() {});
                                     },
-                                  ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -762,9 +766,10 @@ class _StreakFormState extends State<_StreakForm> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
           Row(
             children: const <Widget>[
               Icon(Icons.edit, color: colorText),
@@ -861,6 +866,7 @@ class _StreakFormState extends State<_StreakForm> {
             ],
           ),
         ],
+        ),
       ),
     );
   }
@@ -942,6 +948,7 @@ class _StreakStickerPlacement {
 
 class StreakStickerPanel extends StatelessWidget {
   const StreakStickerPanel({
+    super.key,
     required this.width,
     required this.counts,
     required this.stickerSize,

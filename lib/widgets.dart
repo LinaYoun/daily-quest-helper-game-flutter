@@ -1158,48 +1158,87 @@ class QuestGridView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (quests.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            SizedBox(
-              width: 96,
-              height: 96,
-              child: Stack(
-                alignment: Alignment.center,
-                children: <Widget>[
-                  Container(
-                    width: 96,
-                    height: 96,
-                    decoration: const BoxDecoration(
-                      color: colorAccent,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: const BoxDecoration(
-                      color: colorPaper,
-                      shape: BoxShape.circle,
-                    ),
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          // Check available height and adjust accordingly
+          final double availableHeight = constraints.maxHeight;
+          final bool isTinySpace = availableHeight < 30; // For spaces under 30px
+          final bool isExtremelyConstrained = availableHeight < 80;
+          final bool isVeryConstrained = availableHeight < 120;
+          final bool isConstrained = availableHeight < 160;
+
+          // Adjust sizes based on available space - handle tiny spaces specially
+          final double circleSize = isTinySpace
+              ? (availableHeight * 0.8).clamp(16, 24) // Very conservative for tiny spaces
+              : (isExtremelyConstrained
+                  ? (availableHeight * 0.9).clamp(24, 48)
+                  : (isVeryConstrained ? 64 : (isConstrained ? 80 : 96)));
+          final double innerCircleSize = circleSize * 0.833; // Maintain ratio
+          final double fontSize = isTinySpace ? 8 : (isExtremelyConstrained ? 16 : (isVeryConstrained ? 24 : (isConstrained ? 30 : 36)));
+          final double textSize = isTinySpace ? 8 : (isExtremelyConstrained ? 10 : (isVeryConstrained ? 14 : (isConstrained ? 16 : 18)));
+          final double spacing = isTinySpace ? 1 : (isExtremelyConstrained ? 2 : (isVeryConstrained ? 6 : (isConstrained ? 8 : 12)));
+
+          // Calculate if we have enough space for text
+          final double minRequiredForCircle = circleSize;
+          final double minRequiredForSpacing = spacing;
+          final double minRequiredForText = textSize * 1.2; // Approximate line height
+          final double totalRequired = minRequiredForCircle + minRequiredForSpacing + minRequiredForText;
+          final bool showText = availableHeight >= totalRequired;
+
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                SizedBox(
+                  width: circleSize,
+                  height: circleSize,
+                  child: Stack(
                     alignment: Alignment.center,
-                    child: const Text('🐹', style: TextStyle(fontSize: 36)),
+                    children: <Widget>[
+                      Container(
+                        width: circleSize,
+                        height: circleSize,
+                        decoration: const BoxDecoration(
+                          color: colorAccent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Container(
+                        width: innerCircleSize,
+                        height: innerCircleSize,
+                        decoration: const BoxDecoration(
+                          color: colorPaper,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '🐹',
+                          style: TextStyle(fontSize: fontSize),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (showText) ...[
+                  SizedBox(height: spacing),
+                  Flexible(
+                    child: Text(
+                      emptyMessage ?? '일일 임무를 등록하세요',
+                      style: TextStyle(
+                        color: colorText,
+                        fontSize: textSize,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: isExtremelyConstrained ? 1 : (isVeryConstrained ? 1 : 2),
+                    ),
                   ),
                 ],
-              ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              emptyMessage ?? '일일 임무를 등록하세요',
-              style: const TextStyle(
-                color: colorText,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       );
     }
     return LayoutBuilder(
@@ -1381,17 +1420,215 @@ class QuestCard extends StatelessWidget {
           fillColor: kCardFill,
           radius: kQuestCardRadius,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(34),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final double rawHeight = constraints.maxHeight;
+            final bool heightIsFinite = rawHeight.isFinite;
+            final double h = heightIsFinite ? rawHeight : double.infinity;
+            final bool ultraCompact = h < 80;
+            final bool veryCompact = h < 120;
+            final bool rowLayout = heightIsFinite && h <= 120;
+            final double basePad = ultraCompact ? 8 : 16;
+            final double safePad = math.max(
+              basePad,
+              12,
+            ); // Keep controls inside dashed inset
+            final double bottomPad = safePad + 8;
+            final EdgeInsets padding = EdgeInsets.fromLTRB(
+              safePad,
+              safePad,
+              safePad,
+              bottomPad,
+            );
+            final double glyphSize = ultraCompact ? 40 : 52;
+            final double titleFont = ultraCompact ? 16 : 20;
+            final double chipVPad = ultraCompact ? 2 : 4;
+            final double rewardVPad = ultraCompact ? 2 : 4;
+            final double gapV = ultraCompact ? 4 : 8;
+            final double minTap = 44;
+            final double badgeSize = ultraCompact ? 36 : kBadgeSize;
+            final double rewardSize = ultraCompact ? 32 : 40;
+
+            Widget? buildProgressChip() {
+              if (quest.isCompleted) return null;
+              return Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: chipVPad,
+                ),
+                decoration: BoxDecoration(
+                  color: kChipFillAlt,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${quest.progress}/${quest.target}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: colorText,
+                  ),
+                ),
+              );
+            }
+
+            Widget buildCompletionIcon() {
+              return _CompletionIcon(
+                completed: quest.isCompleted,
+                size: badgeSize,
+              );
+            }
+
+            Widget buildRewardButton({
+              Alignment alignment = Alignment.topRight,
+            }) {
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(22),
+                  onTap: quest.isCompleted ? null : () => onComplete(quest.id),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: minTap,
+                      minHeight: minTap,
+                    ),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: rewardVPad,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorAccent.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: _RewardTile(
+                        imageUrl: quest.rewardUrl,
+                        isCompleted: quest.isCompleted,
+                        size: rewardSize,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            Widget buildActionStrip({
+              MainAxisAlignment alignment = MainAxisAlignment.end,
+              Alignment rewardAlignment = Alignment.topRight,
+              double spacing = 8,
+              double runSpacing = 4,
+              bool tight = false,
+            }) {
+              final Widget? chip = buildProgressChip();
+              final List<Widget> items = <Widget>[
+                if (chip != null) chip,
+                buildCompletionIcon(),
+                buildRewardButton(alignment: rewardAlignment),
+              ];
+              if (tight) {
+                final WrapAlignment wrapAlignment;
+                switch (alignment) {
+                  case MainAxisAlignment.start:
+                    wrapAlignment = WrapAlignment.start;
+                    break;
+                  case MainAxisAlignment.center:
+                    wrapAlignment = WrapAlignment.center;
+                    break;
+                  case MainAxisAlignment.spaceBetween:
+                  case MainAxisAlignment.spaceEvenly:
+                  case MainAxisAlignment.spaceAround:
+                    wrapAlignment = WrapAlignment.center;
+                    break;
+                  case MainAxisAlignment.end:
+                    wrapAlignment = WrapAlignment.end;
+                    break;
+                }
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: runSpacing,
+                  alignment: wrapAlignment,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: items,
+                );
+              }
+              final List<Widget> rowChildren = <Widget>[
+                if (items.isNotEmpty) items.first,
+                for (int i = 1; i < items.length; i++) ...<Widget>[
+                  SizedBox(width: spacing),
+                  items[i],
+                ],
+              ];
+              return Row(
+                mainAxisSize: tight ? MainAxisSize.min : MainAxisSize.max,
+                mainAxisAlignment: alignment,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: rowChildren,
+              );
+            }
+
+            final Widget actionsRow = LayoutBuilder(
+              builder: (context, rowConstraints) {
+                final Widget actions = buildActionStrip();
+                final bool veryNarrow = rowConstraints.maxWidth < 120;
+                return veryNarrow
+                    ? Align(
+                        alignment: Alignment.centerRight,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: actions,
+                        ),
+                      )
+                    : actions;
+              },
+            );
+            if (rowLayout) {
+              final double spacing = ultraCompact ? 6 : 8;
+              return Padding(
+                padding: padding,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    QuestGlyph(
+                      title: quest.title,
+                      iconUrl: quest.iconUrl,
+                      size: glyphSize,
+                    ),
+                    SizedBox(width: ultraCompact ? 6 : 10),
+                    Expanded(
+                      child: Text(
+                        quest.title,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: titleFont,
+                          fontWeight: FontWeight.w800,
+                          color: colorText,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: spacing),
+                    Flexible(
+                      child: buildActionStrip(
+                        alignment: MainAxisAlignment.end,
+                        rewardAlignment: ultraCompact
+                            ? Alignment.centerRight
+                            : Alignment.center,
+                        spacing: spacing,
+                        runSpacing: ultraCompact ? 2 : 4,
+                        tight: true,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            final List<Widget> normalOrder = <Widget>[
               Row(
                 children: <Widget>[
                   QuestGlyph(
                     title: quest.title,
                     iconUrl: quest.iconUrl,
-                    size: 52,
+                    size: glyphSize,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1399,68 +1636,69 @@ class QuestCard extends StatelessWidget {
                       quest.title,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
-                      style: const TextStyle(
-                        fontSize: 23,
+                      style: TextStyle(
+                        fontSize: titleFont,
                         fontWeight: FontWeight.w800,
                         color: colorText,
                       ),
                     ),
                   ),
-                  // Removed duplicate top progress chip
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: gapV),
+              actionsRow,
+            ];
+            final List<Widget> compactOrder = <Widget>[
+              actionsRow,
+              SizedBox(height: gapV),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: <Widget>[
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: kChipFillAlt,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                  QuestGlyph(
+                    title: quest.title,
+                    iconUrl: quest.iconUrl,
+                    size: glyphSize,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: Text(
-                      '${quest.progress}/${quest.target}',
-                      style: const TextStyle(
-                        fontSize: 15,
+                      quest.title,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: titleFont,
                         fontWeight: FontWeight.w800,
                         color: colorText,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  _CompletionIcon(completed: quest.isCompleted),
-                  const SizedBox(width: 8),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(22),
-                      onTap: quest.isCompleted
-                          ? null
-                          : () => onComplete(quest.id),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorAccent.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(22),
-                        ),
-                        child: _RewardTile(
-                          imageUrl: quest.rewardUrl,
-                          isCompleted: quest.isCompleted,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
-            ],
-          ),
+            ];
+            Widget column = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: veryCompact ? compactOrder : normalOrder,
+            );
+            if (veryCompact) {
+              final bool enableScroll = h < 110;
+              column = SingleChildScrollView(
+                padding: EdgeInsets.zero,
+                physics: enableScroll
+                    ? const ClampingScrollPhysics()
+                    : const NeverScrollableScrollPhysics(),
+                clipBehavior: Clip.hardEdge,
+                child: column,
+              );
+            } else {
+              column = SingleChildScrollView(
+                padding: EdgeInsets.zero,
+                physics: const NeverScrollableScrollPhysics(),
+                clipBehavior: Clip.hardEdge,
+                child: column,
+              );
+            }
+            return Padding(padding: padding, child: column);
+          },
         ),
       ),
     );
@@ -1468,31 +1706,39 @@ class QuestCard extends StatelessWidget {
 }
 
 class _CompletionIcon extends StatelessWidget {
-  const _CompletionIcon({required this.completed});
+  const _CompletionIcon({required this.completed, this.size = kBadgeSize});
   final bool completed;
+  final double size;
   @override
   Widget build(BuildContext context) {
+    final double scale = size / kBadgeSize;
+    final double checkSize = 30 * scale;
+    final double strokeWidth = 3 * scale;
+    final double fontSize = 28 * scale;
     return Container(
-      width: kBadgeSize,
-      height: kBadgeSize,
+      width: size,
+      height: size,
       decoration: const BoxDecoration(
         color: kChipFillAlt,
         shape: BoxShape.circle,
       ),
       child: Center(
         child: completed
-            ? const SizedBox(
-                width: 30,
-                height: 30,
+            ? SizedBox(
+                width: checkSize,
+                height: checkSize,
                 child: CustomPaint(
-                  painter: _CheckPainter(color: Colors.green, strokeWidth: 3),
+                  painter: _CheckPainter(
+                    color: Colors.green,
+                    strokeWidth: strokeWidth,
+                  ),
                 ),
               )
-            : const Text(
+            : Text(
                 '?',
                 style: TextStyle(
                   color: colorText,
-                  fontSize: 28,
+                  fontSize: fontSize,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1538,22 +1784,27 @@ class _CheckPainter extends CustomPainter {
 }
 
 class _RewardTile extends StatelessWidget {
-  const _RewardTile({required this.imageUrl, required this.isCompleted});
+  const _RewardTile({
+    required this.imageUrl,
+    required this.isCompleted,
+    this.size = 40,
+  });
   final String? imageUrl;
   final bool isCompleted;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     final Widget content = Container(
-      width: 40,
-      height: 40,
+      width: size,
+      height: size,
       alignment: Alignment.center,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: imageUrl != null && imageUrl!.isNotEmpty
             ? _buildRewardImage(imageUrl!)
             : CustomPaint(
-                size: const Size(40, 40),
+                size: Size.square(size),
                 painter: RewardIconPainter(),
               ),
       ),
@@ -1616,16 +1867,17 @@ class RewardDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.black.withOpacity(0.6),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(16),
       child: Container(
-        color: Colors.black.withOpacity(0.6),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(16),
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: 420,
-            maxHeight: MediaQuery.of(context).size.height * 0.8,
-          ),
+        constraints: BoxConstraints(
+          maxWidth: 420,
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
           decoration: BoxDecoration(
             color: colorPaper,
             borderRadius: BorderRadius.circular(24),
@@ -1693,7 +1945,6 @@ class RewardDialog extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }
@@ -1755,14 +2006,15 @@ class ItemAwardDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: Container(
-        color: Colors.black.withOpacity(0.6),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(16),
-        child: SizedBox(
-          width: 600,
-          child: Container(
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.black.withOpacity(0.6),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(16),
+      child: SizedBox(
+        width: 600,
+        child: Container(
             constraints: BoxConstraints(
               maxWidth: 1040,
               maxHeight: MediaQuery.of(context).size.height * 0.8,
@@ -1859,7 +2111,6 @@ class ItemAwardDialog extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }
@@ -1879,15 +2130,16 @@ class DeleteConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.black.withOpacity(0.6),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(16),
       child: Container(
-        color: Colors.black.withOpacity(0.6),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(16),
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: 520,
-            maxHeight: MediaQuery.of(context).size.height * 0.8,
+        constraints: BoxConstraints(
+          maxWidth: 520,
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
           ),
           decoration: BoxDecoration(
             color: colorPaper,
@@ -2002,7 +2254,6 @@ class DeleteConfirmDialog extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }
@@ -2019,16 +2270,17 @@ class BadgeAwardDialog extends StatelessWidget {
   final VoidCallback onClose;
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.black.withOpacity(0.6),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(16),
       child: Container(
-        color: Colors.black.withOpacity(0.6),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(16),
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: 600,
-            maxHeight: MediaQuery.of(context).size.height * 0.8,
-          ),
+        constraints: BoxConstraints(
+          maxWidth: 600,
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
           decoration: BoxDecoration(
             color: colorPaper,
             borderRadius: BorderRadius.circular(24),
@@ -2098,7 +2350,6 @@ class BadgeAwardDialog extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }
@@ -2405,9 +2656,10 @@ class _EditFormState extends State<_EditForm> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
           Row(
             children: const <Widget>[
               Icon(Icons.edit, color: colorText),
@@ -2504,6 +2756,7 @@ class _EditFormState extends State<_EditForm> {
             ],
           ),
         ],
+        ),
       ),
     );
   }
@@ -2530,20 +2783,21 @@ class _RegisterFormState extends State<_RegisterForm> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
-            children: const <Widget>[
-              Icon(Icons.edit, color: colorText),
-              SizedBox(width: 8),
-              Text(
-                '새 임무 정보를 입력하세요',
-                style: TextStyle(
-                  color: colorText,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              children: const <Widget>[
+                Icon(Icons.edit, color: colorText),
+                SizedBox(width: 8),
+                Text(
+                  '새 임무 정보를 입력하세요',
+                  style: TextStyle(
+                    color: colorText,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
               ),
             ],
           ),
@@ -2629,6 +2883,7 @@ class _RegisterFormState extends State<_RegisterForm> {
             ],
           ),
         ],
+        ),
       ),
     );
   }
